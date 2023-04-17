@@ -15,8 +15,8 @@ from cobs import cobs
 
 from serial import Serial
 
-from robolab.received_structure import PlottingStruct
-from robolab.serial_communication._utils import get_serial, get_serial_port
+from clab_datalogger_receiver.received_structure import PlottingStruct
+from clab_datalogger_receiver.serial_communication._utils import get_serial, get_serial_port
 
 
 def get_random_single_data(datatype: str):

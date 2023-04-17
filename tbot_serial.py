@@ -7,18 +7,16 @@ Authors:
 
 """
 
-import cProfile
 import sys
 import time
-from queue import Empty as q_Empty
-from queue import Queue
+from queue import Empty as q_Empty, Queue
 
 import matplotlib.pyplot as plt
 
-from robolab.animator import Animator
-from robolab.received_structure import DataStruct, PlottingStruct
-from robolab.serial_communication.communication import TurtlebotSerialConnector
-from robolab.serial_communication.packets import TimedPacketBase
+from clab_datalogger_receiver.animator import Animator
+from clab_datalogger_receiver.received_structure import DataStruct, PlottingStruct
+from clab_datalogger_receiver.serial_communication.communication import TurtlebotSerialConnector
+from clab_datalogger_receiver.serial_communication.packets import TimedPacketBase
 
 from scipy.io import savemat
 
@@ -184,6 +182,10 @@ def main(x_data, y_data):
 
 def main_prof(x_data, y_data):
     """Execute the main function while also executing the profiler."""
+    # pylint: disable=import-outside-toplevel
+    import cProfile
+    # pylint: enable=import-outside-toplevel
+
     with cProfile.Profile() as profiler:
 
         main(x_data, y_data)

@@ -1,0 +1,24 @@
+[project]
+name = "clab-datalogger-receiver"
+version = "0.1.dev0"
+description = "A porting of another MATLAB implementation of the same data receiver and plotter."
+license = {file='LICENSE'}
+authors = [ 
+    {name="Marco Perin", email="marco.perin.6@studenti.unipd.it"},
+]
+dependencies = [
+    'cobs>=1.2.0',
+    'pyserial>=3.5',
+]
+readme= "README.md"
+
+[project.urls]
+repository = "https://github.com/sparcs-unipd/CLAB-datalogger-receiver"
+
+
+
+
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = ["setuptools", "wheel"]  # PEP 508 specifications.
+build-backend = "setuptools.build_meta"
