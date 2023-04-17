@@ -22,6 +22,23 @@ It is possible to configure the serial data format in (mainly) two ways:
 - By editing the file `struct_cfg.yaml`, that is loaded by the function call `PlottingStruct.from_yaml_file()`
 - By calling the function `PlottingStruct.from_string_list(formats list)`, where formats is a list of format string that follows the convention of python's `struct`, as in [here](https://docs.python.org/3/library/struct.html#format-characters)
 
+
+## PIP
+
+### Building
+
+In order to build the package it is sufficient to run
+
+        pip install -e .
+
+Or, for local development
+
+        pip install -e .
+
+And finally, to check the information of the package
+
+        pip show clab_datalogger_receiver 
+
 ## Testing
 
 To test the program it is possible to use the script `tbot_serial_sender.py`,
