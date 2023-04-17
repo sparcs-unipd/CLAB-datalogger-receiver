@@ -131,3 +131,7 @@ dmypy.json
 
 # .mat files generated from data export
 **.mat
+
+# Profiling
+**.prof
+**profiling*.svg
