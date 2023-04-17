@@ -182,7 +182,7 @@ class PlottingStruct:
     @classmethod
     def from_yaml_file(cls, filename='struct_cfg.yaml'):
         """Create class from yamlconfiguration file."""
-        with open(filename, 'rt') as file:
+        with open(filename, 'rt', encoding='utf-8') as file:
             data_s = load_yaml(file)
 
         assert len(data_s) > 0, 'No data in file'

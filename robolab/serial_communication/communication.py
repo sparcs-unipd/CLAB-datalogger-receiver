@@ -25,8 +25,8 @@ class TurtlebotReaderThread(ReaderThread):
     def __init__(
         self,
         serial_instance: Serial,
-        packet_spec: PlottingStruct,
-        queue: Queue
+        rx_packet_spec: PlottingStruct,
+        rx_queue: Queue
     ) -> None:
         """
         Create a thread to connect to the turtlebot in a separate thread.
@@ -34,7 +34,7 @@ class TurtlebotReaderThread(ReaderThread):
         It uses the `TurtlebotThreadedConnection` as a base protocol
         """
         def __get_tbot_protocol() -> TurtlebotThreadedConnection:
-            return TurtlebotThreadedConnection(packet_spec, queue)
+            return TurtlebotThreadedConnection(rx_packet_spec, rx_queue)
 
         super().__init__(serial_instance, __get_tbot_protocol)
 
@@ -63,14 +63,14 @@ class TurtlebotSerialConnector:
 
     def __init__(
             self,
-            packet_spec: PlottingStruct,
+            rx_packet_spec: PlottingStruct,
             baudrate=115200
     ) -> None:
         """Init the connection class to manage the connection to the STM."""
         self.port = get_serial_port()
         self.serial = get_serial(self.port, baudrate)
         self.queue = Queue()
-        self.__packet_spec = packet_spec
+        self.__packet_spec = rx_packet_spec
 
         self.__thread = TurtlebotReaderThread(
             self.serial,

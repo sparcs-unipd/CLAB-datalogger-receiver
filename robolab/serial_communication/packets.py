@@ -9,7 +9,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 # from time import process_time as time
-import time
+
 # from time import thread_time
 from time import perf_counter as time_now
 from typing import Any
@@ -76,8 +76,6 @@ class DateTimedPacket(TimedPacketBase):
         return datetime.now()
 
 
-
-
 @dataclass
 class TimedPacket(TimedPacketBase):
     """Data class representing a packet with timestamp."""
@@ -94,7 +92,7 @@ class TimedPacket(TimedPacketBase):
     def get_time():
         """Return the current time as a float."""
         return time_now()
-    
+
 
 if __name__ == '__main__':
 
@@ -106,7 +104,7 @@ if __name__ == '__main__':
     print('p1: ', p1)
     print('p2: ', p2)
 
-    p2_type = type(p2)
-    p3 = p2_type.from_data('CIAO')
+    P2Type = type(p2)
+    p3 = P2Type.from_data('CIAO')
 
     print(p3)

@@ -1,15 +1,24 @@
+"""
+Module to implement the custom packetizers for the communication with the \
+ sender in another thread.
 
+These implements the `serial.threaded.Packetizer` classes.
+
+Author:
+    Marco Perin
+
+"""
 
 from datetime import datetime
 from queue import Queue
 from struct import unpack as struct_unpack
-from typing import List, Tuple, Type, cast
+from typing import List, Tuple, Type
 
 from cobs import cobs
 
 from serial.threaded import Packetizer
 
-from .packets import DateTimedPacket, TimedPacket, TimedPacketBase, Packet
+from .packets import TimedPacket, TimedPacketBase
 from ..received_structure import PlottingStruct
 
 
@@ -160,16 +169,17 @@ class TurtlebotThreadedConnection(SerialThreadedRecvTx):
                     data_packet
                 ))
             data_i += packet.struct_byte_size
-        
+
         pck = self.packet_type.from_data(data=packets)
         # if issubclass(type(pck), TimedPacketBase):
-    
+
         if self.t_0 is None:
             self.t_0 = pck.time
 
         assert isinstance(pck.time, type(self.t_0))
 
-        pck.time -= self.t_0
+        # Ignore warning as asserted previously that types match
+        pck.time -= self.t_0  # type: ignore
 
         # print(pck)
         return pck

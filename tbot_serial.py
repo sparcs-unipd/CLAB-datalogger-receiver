@@ -14,37 +14,46 @@ from queue import Empty as q_Empty
 from queue import Queue
 
 import matplotlib.pyplot as plt
-from scipy.io import savemat
 
 from robolab.animator import Animator
 from robolab.received_structure import DataStruct, PlottingStruct
 from robolab.serial_communication.communication import TurtlebotSerialConnector
 from robolab.serial_communication.packets import TimedPacketBase
 
-data_struct = PlottingStruct.from_string_list(['fffff'])
-data_struct = PlottingStruct.from_yaml_file()
+from scipy.io import savemat
 
+MAT_FILENAME = 'test_data.mat'
+MAX_ACQUISITION_TIME = 100  # s
+
+
+# Data struct from format string list examples
+# data_struct = PlottingStruct.from_string_list(['fffff'])
+# data_struct = PlottingStruct.from_string_list(['fff'],['ff'])
+
+# Data struct from yaml configuration file
+data_struct = PlottingStruct.from_yaml_file()
 
 data_struct_str = data_struct.struct_format_string
 
+# Queue to signal when the plot is closed
+#  (or when, in general, a 'close' event occurs)
 closed_queue = Queue()
-
 
 ser = TurtlebotSerialConnector(data_struct)
 
 
-def on_fig_close(event):
-    # global closed_requested
+def on_fig_close(_):
+    """Signal that the plot is closed."""
     print('Close requested')
-    # print(event)
-    # closed_requested = True
+
     closed_queue.put(True)
 
 
 def create_axes(data_format: PlottingStruct):
+    """Create image axis based on the data struct."""
     res = []
     for i in range(len(data_format)):
-        res.append(fig.add_subplot(len(data_format), 1, i+1))
+        res.append(fig.add_subplot(len(data_format), 1, i+1))  # type: ignore
         plt.grid(True)
 
     return res
@@ -67,71 +76,73 @@ t_0 = time.time()
 
 
 def currtime():
+    """Return the time since `t_0`."""
     return time.time() - t_0
 
 
-ys = []
-xs = []
+y_data_vector = []
+x_data_vector = []
 
 
-ys = [[] for _ in range(len(data_struct))]
+y_data_vector = [[] for _ in range(len(data_struct))]
 
 for y_i in range(len(data_struct)):
-    ys[y_i] = [[] for _ in range(len(data_struct[y_i]))]
+    y_data_vector[y_i] = [[] for _ in range(len(data_struct[y_i]))]
 
 
-def animate_frame(x_data, y_data, data_s: DataStruct, ax):
-
-    ax.clear()
+def animate_frame(x_data, y_data, data_s: DataStruct, axis):
+    """Define what to do in order to refresh the plot."""
+    axis.clear()
 
     for i in range(len(data_s)):
-        ax.plot(x_data[-100:], y_data[i][-100:])
+        axis.plot(x_data[-100:], y_data[i][-100:])
         # ax.scatter(x_data[-100:], y_data[i][-100:])
 
     names = [s_i.name for s_i in data_s]
 
-    for i, n in enumerate(names):
-        if n is not None:
-            names[i] = n
+    for i, name in enumerate(names):
+        if name is not None:
+            names[i] = name
         else:
             names[i] = str(i)
 
-    ax.set_title(data_s.name)
-    ax.legend(names, loc='upper right')
-    ax.grid(True)
+    axis.set_title(data_s.name)
+    axis.legend(names, loc='upper right')
+    axis.grid(True)
 
 
 anim = Animator(animate_frame, fps=10)
 
 t_prev = currtime()
 
-
 plt.ion()
 plt.show()
-
-# assert len(
-#     data_struct
-# ) == 1, 'data_struct with more than one plot is not yet implemented'
 
 
 def manage_packet(
         packet: TimedPacketBase,
-        xs, ys,
-        data_struct: PlottingStruct
+        x_data,
+        y_data,
+        rx_data_struct: PlottingStruct
 ) -> None:
-    xs.append(packet.time)
-    # print(packet.time)
-    for ax_i, ax in enumerate(axes):
-        # print(f'data for axes {ax_i}', ax )
+    """
+    Manage a packet received from serial reader queue.
+
+    It is expected that the packet is a subclass of `TimedPacketBase`.
+
+    """
+    x_data.append(packet.time)
+
+    for ax_i, axis in enumerate(axes):
 
         for i, data_aa in enumerate(packet.data[ax_i]):
-            ys[ax_i][i].append(data_aa)
+            y_data[ax_i][i].append(data_aa)
 
         anim.animate(
-            xs,
-            ys[ax_i],
-            data_struct[ax_i],
-            ax,
+            x_data,
+            y_data[ax_i],
+            rx_data_struct[ax_i],
+            axis,
             upd_counter=(ax_i) == len(axes) - 1)
 
     plt.draw()
@@ -140,19 +151,18 @@ def manage_packet(
 
 ser.connect()
 
-queue = ser.queue
-
-max_t = 100
+rx_queue = ser.queue
 
 
-def loop(xs, ys):
+def loop(x_data, y_data):
+    """Execute main loop."""
     closed_requested = False
-    while not closed_requested and currtime() < max_t:
+    while not closed_requested and currtime() < MAX_ACQUISITION_TIME:
 
         try:
-            packet = queue.get_nowait()
+            packet = rx_queue.get_nowait()
             # print(packet)
-            manage_packet(packet, xs, ys, data_struct)
+            manage_packet(packet, x_data, y_data, data_struct)
         except q_Empty:
             pass
 
@@ -162,49 +172,50 @@ def loop(xs, ys):
             pass
 
 
-# with cProfile.Profile() as pr:
-
-def main(xs, ys):
+def main(x_data, y_data):
+    """Execute the loop checking for keybard interrupts."""
     try:
-        loop(xs, ys)
+        loop(x_data, y_data)
     except KeyboardInterrupt:
         print()
         print('Interrupting because of keyboard interrupt.')
         print()
 
-    # pr.print_stats()
-    # pr.dump_stats('profile_out')
+
+def main_prof(x_data, y_data):
+    """Execute the main function while also executing the profiler."""
+    with cProfile.Profile() as profiler:
+
+        main(x_data, y_data)
+
+        profiler.print_stats()
+        profiler.dump_stats('profile_out')
 
 
-def main_prof(xs, ys):
-    with cProfile.Profile() as pr:
-        main(xs, ys)
-        pr.print_stats()
-        pr.dump_stats('profile_out')
+if __name__ == '__main__':
 
+    main(x_data_vector, y_data_vector)
 
-main()
-
-ser.close()
-
-try:
-    save_data = input('Do you want to save the data? [Y/n]')
-except KeyboardInterrupt:
+    ser.close()
     save_data = ''
 
-if save_data not in 'Y\n':
-    print('Exiting without saving data')
-    sys.exit(0)
+    try:
+        save_data = input('Do you want to save the data? [Y/n]')
+    except KeyboardInterrupt:
+        # Treat `CTRL+C` as a no
+        pass
 
-FILENAME = 'test_data.mat'
+    if save_data not in 'Y\n':
+        print('Exiting without saving data')
+        sys.exit(0)
 
-file_dict = {
-    'turtlebot_data': {
-        'time': xs,
-        'data': ys
+    file_dict = {
+        'turtlebot_data': {
+            'time': x_data_vector,
+            'data': y_data_vector
+        }
     }
-}
 
-savemat(FILENAME, mdict=file_dict)
+    savemat(MAT_FILENAME, mdict=file_dict)
 
-print('Data saved')
+    print('Data saved')

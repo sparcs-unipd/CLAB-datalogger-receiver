@@ -1,4 +1,10 @@
+"""
+General utilities module for the `robolab` package.
 
+Author:
+    Marco Perin
+
+"""
 from serial import Serial
 from serial.tools.list_ports import comports
 
