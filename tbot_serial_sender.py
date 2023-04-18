@@ -32,18 +32,33 @@ def get_random_single_data(datatype: str):
     )
 
 
+def get_random_seed(rx_data_struct: PlottingStruct) -> list[list[float]]:
+
+    ret = []
+
+    for subplots in rx_data_struct.subplots:
+        ret_i = []
+        for field in subplots.fields:
+            ret_i.append(get_random_single_data(field.data_type) * 10)
+
+        ret.append(ret_i)
+    return ret
+
+
 def get_random_data(
-    rx_data_struct: PlottingStruct
+    rx_data_struct: PlottingStruct,
+    seed: list[list[float]]
 ) -> bytes:
     """Return data representing the packet specified by `data_struct`."""
     subs = []
 
-    for subplots in rx_data_struct.subplots:
+    for s_i, subplots in enumerate(rx_data_struct.subplots):
 
         dat = {}
         dat_vals = []
-        for field in subplots.fields:
-            val = get_random_single_data(field.data_type)
+        for f_i, field in enumerate(subplots.fields):
+            val = get_random_single_data(
+                field.data_type) * 0.1 + seed[s_i][f_i]
             dat[field.name] = val
             dat_vals.append(val)
 
@@ -54,10 +69,12 @@ def get_random_data(
 
 def send_package(
     serial_obj: Serial,
-        rx_data_struct: PlottingStruct
+    rx_data_struct: PlottingStruct,
+    seed: list[list[float]]
 ) -> int | None:
     """Send a packet with structure as in `data_struc` and random values."""
-    data = get_random_data(rx_data_struct)
+
+    data = get_random_data(rx_data_struct, seed)
     bytes_to_send = cobs.encode(data) + b'\x00'
     return serial_obj.write(bytes_to_send)
 
@@ -75,17 +92,24 @@ if __name__ == '__main__':
 
     serial.write_timeout = 5
 
-    PPS = 20
+    PPS = 200
 
     do_exit = False
 
-    t_prev = time()
+    # SEND_DATA_TOKEN = b'\x41'
+    # while serial.read_until(b'\0x00') != SEND_DATA_TOKEN:
+    #     pass
 
+    # print('starting sending data')
+
+    rand_seed = get_random_seed(data_struct)
+
+    t_prev = time()
     while not do_exit:
         try:
             if time() >= (t_prev + 1/PPS):
                 # print('sending')
-                send_package(serial, data_struct)
+                send_package(serial, data_struct, rand_seed)
                 t_prev = time()
 
         except KeyboardInterrupt:
