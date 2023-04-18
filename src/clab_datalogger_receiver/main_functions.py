@@ -271,6 +271,10 @@ def main(dlogger: ClabDataLoggerReceiver | None = None):
     if dlogger is None:
         dlogger = ClabDataLoggerReceiver()
 
+    if len(dlogger.data_struct.subplots) > 1:
+        print('!!! WARNING !!!')
+        print(' data saving for more than one subplot is not yet supported.')
+
     dlogger.connect()
 
     dlogger.do_loop_while_true()
