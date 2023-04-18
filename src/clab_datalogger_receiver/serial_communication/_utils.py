@@ -40,7 +40,11 @@ def get_serial_port(autoscan_st_port: bool = True) -> str | None:
                 for i, p in enumerate(available_ports)])
               )
         p_s_in = input()
-        p_s = int(p_s_in)
+
+        if p_s_in.isnumeric():
+            p_s = int(p_s_in)
+        else:
+            raise ValueError('The provied value is not an integer.')
 
     print(
         (
