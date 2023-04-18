@@ -12,7 +12,7 @@ dependencies = [
     'scipy>=1.10.1',
     'pyyaml>=6.0',
     'matplotlib>=3.6.2',
-    'typing;python_version<3.5'
+    'typing;python_version < "3.5"'
 ]
 readme= "README.md"
 requires-python = ">=3.11"
