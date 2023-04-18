@@ -43,18 +43,19 @@ def get_serial_port(autoscan_st_port: bool = True) -> str | None:
         p_s = int(p_s_in)
 
     print(
-        f'Connecting to {available_ports[p_s].name} [{available_ports[p_s].description}]...',
+        (
+            f'Selected device {available_ports[p_s].device}'
+            '[{available_ports[p_s].description}]...'
+        ),
         end=''
     )
-    # interface = SerialCommunicationInterface(pps[p_s].name, baudrate)
-    print('done')
 
-    # return interface
-    return available_ports[p_s].name
+    return available_ports[p_s].device
 
 
 def get_serial(port, baudrate=115200):
     """Build serial object with params for turtlebot."""
+
     return Serial(
         port=port,
         baudrate=baudrate,
