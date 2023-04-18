@@ -128,9 +128,10 @@ class ClabDataLoggerReceiver:
         closed_requested = False
 
         try:
-            packet = self.rx_queue.get_nowait()
-            # print(packet)
-            self.manage_packet(packet)
+            # packet = self.rx_queue.get_nowait()
+            while self.rx_queue.qsize() > 0:
+                self.append_data(self.rx_queue.get_nowait())
+            self.manage_packet()
         except q_Empty:
             pass
 
@@ -210,23 +211,23 @@ class ClabDataLoggerReceiver:
         axis.legend(names, loc='upper right')
         axis.grid(True)
 
-    def manage_packet(
-            self,
-            packet: TimedPacketBase
-    ) -> None:
+    def append_data(self, packet: TimedPacketBase):
+        """Appends the new packet to the data"""
+
+        self.x_data_vector.append(packet.time)
+
+        for ax_i in range(len(self.axes)):
+            for i, data_aa in enumerate(packet.data[ax_i]):
+                self.y_data_vector[ax_i][i].append(data_aa)
+
+    def manage_packet(self) -> None:
         """
         Manage a packet received from serial reader queue.
 
         It is expected that the packet is a subclass of `TimedPacketBase`.
 
         """
-        self.x_data_vector.append(packet.time)
-
         for ax_i, axis in enumerate(self.axes):
-
-            for i, data_aa in enumerate(packet.data[ax_i]):
-                self.y_data_vector[ax_i][i].append(data_aa)
-
             self.animator.animate(
                 ax_i,
                 axis,
