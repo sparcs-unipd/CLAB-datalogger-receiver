@@ -5,7 +5,17 @@ This is to prevent some errors occurring during the ERTC course due MATLAB's ser
 
 ## How-to
 
-The main script of this project is `tbot_serial.py`.
+This is a runnable package, meaning that it is possible to run
+
+```console
+python -m clab_datalogger_receiver
+```
+
+or by launching the `run_receiver.bat` file.
+
+Notice that the package needs first to be installed.
+
+This can be done by running `install_package.bat`
 
 On launch, it will connect to the serial port,
 ( asking whuch one, if multiple are available),
