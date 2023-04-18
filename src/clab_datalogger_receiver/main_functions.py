@@ -50,7 +50,7 @@ class ClabDataLoggerReceiver:
 
     def __init__(self, fps: int = 10, max_time: float = -1) -> None:
         """Initialize the class."""
-        self.data_struct = PlottingStruct. from_yaml_file()
+        self.data_struct = PlottingStruct.from_yaml_file()
         self.closed_queue = Queue()
         self.figure = plt.figure()
         self.figure.canvas.mpl_connect(

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import struct
 from dataclasses import dataclass
 from typing import Dict, List, Type
@@ -182,6 +183,12 @@ class PlottingStruct:
     @classmethod
     def from_yaml_file(cls, filename='struct_cfg.yaml'):
         """Create class from yamlconfiguration file."""
+
+        file_exists = os.path.isfile(filename)
+
+        if not file_exists:
+            raise FileNotFoundError("Create config file.")
+
         with open(filename, 'rt', encoding='utf-8') as file:
             data_s = load_yaml(file)
 
