@@ -256,10 +256,20 @@ def save_data(
 
     file_dict = {
         'turtlebot_data': {
-            'time': datalogger.x_data_vector,
-            'data': datalogger.y_data_vector
+            'time': datalogger.x_data_vector
         }
     }
+
+    for idx, (sp, y_data) in enumerate(zip(
+        datalogger.data_struct.subplots,
+        datalogger.y_data_vector
+    )):
+        name = sp.name
+
+        if name is None:
+            name = f'data_struct_{idx}'
+
+        file_dict['turtlebot_data'][name] = y_data
 
     savemat(mat_filename, mdict=file_dict)
 
@@ -270,10 +280,6 @@ def main(dlogger: ClabDataLoggerReceiver | None = None):
     """Run an example of a main function."""
     if dlogger is None:
         dlogger = ClabDataLoggerReceiver()
-
-    if len(dlogger.data_struct.subplots) > 1:
-        print('!!! WARNING !!!')
-        print(' data saving for more than one subplot is not yet supported.')
 
     dlogger.connect()
 
