@@ -256,7 +256,8 @@ def save_data(
 
     file_dict = {
         'turtlebot_data': {
-            'time': datalogger.x_data_vector
+            'time': datalogger.x_data_vector,
+            'field_names': {}
         }
     }
 
@@ -270,6 +271,9 @@ def save_data(
             name = f'data_struct_{idx}'
 
         file_dict['turtlebot_data'][name] = y_data
+
+        file_dict['turtlebot_data']['field_names'][name] = [
+            f.name for f in sp.fields]
 
     savemat(mat_filename, mdict=file_dict)
 
