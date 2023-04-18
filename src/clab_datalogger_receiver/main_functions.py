@@ -83,10 +83,12 @@ class ClabDataLoggerReceiver:
 
     def do_loop_while_true(self):
         """Execute `self.loop()` until exit is requested."""
-        do_exit = False
+        exit_requested = False
 
-        while not do_exit:
-            do_exit = self.loop()
+        while not exit_requested:
+            exit_requested = self.loop()
+
+        plt.close()
 
     def do_loop_while_true_profiling(
         self,
@@ -113,9 +115,7 @@ class ClabDataLoggerReceiver:
         try:
             return self.__loop()
         except KeyboardInterrupt:
-            print()
             print('Interrupting because of keyboard interrupt.')
-            print()
             return True
 
     def __loop(self) -> bool:
@@ -126,6 +126,7 @@ class ClabDataLoggerReceiver:
 
         """
         closed_requested = False
+
         try:
             packet = self.rx_queue.get_nowait()
             # print(packet)
@@ -136,9 +137,9 @@ class ClabDataLoggerReceiver:
         try:
             closed_requested = self.closed_queue.get_nowait()
         except q_Empty:
-            pass
+            closed_requested = False
 
-        if self.max_time != -1:
+        if self.max_time != -1 and not closed_requested:
             closed_requested = self.currtime() > self.max_time
 
         return closed_requested
@@ -241,14 +242,14 @@ def save_data(
         mat_filename: str = 'out_data.mat'
 ):
     """Save the data of datalogger."""
-    save_data = ''
+    save_data_in = ''
     try:
-        save_data = input('Do you want to save the data? [Y/n]')
+        save_data_in = input('Do you want to save the data? [Y/n]')
     except KeyboardInterrupt:
         # Treat `CTRL+C` as a no
         pass
 
-    if save_data not in 'Y\n':
+    if save_data_in not in 'Y\n':
         print('Exiting without saving data')
         sys.exit(0)
 
