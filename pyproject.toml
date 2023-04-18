@@ -1,6 +1,6 @@
 [project]
 name = "clab-datalogger-receiver"
-version = "0.1.dev0"
+version = "0.1.0"
 description = "A porting of another MATLAB implementation of the same data receiver and plotter."
 license = {file='LICENSE'}
 authors = [ 
@@ -9,14 +9,31 @@ authors = [
 dependencies = [
     'cobs>=1.2.0',
     'pyserial>=3.5',
+    'scipy>=1.10.1',
+    'pyyaml>=6.0',
+    'matplotlib>=3.6.2'
 ]
 readme= "README.md"
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
+
 
 [project.urls]
 repository = "https://github.com/sparcs-unipd/CLAB-datalogger-receiver"
 
+[tool.bumpver]
+current_version = "0.1.0"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message  = "Bump version {old_version} -> {new_version}"
+commit          = true
+tag             = true
+push            = false
 
-
+[tool.bumpver.file_patterns]
+"pyproject.toml" = ['current_version = "{version}"', 'version = "{version}"']
+"src/clab_datalogger_receiver/__init__.py" = ["{version}"]
 
 [build-system]
 # Minimum requirements for the build system to execute.

@@ -4,7 +4,7 @@ Serial plotting library.
 Authors:
     Alberto Morato
     Marco Perin
-    
+
 """
 
 
