@@ -179,7 +179,7 @@ class QTGraphicsWrapper(GraphicWrapperBase):
             t_w: float | None = 10
     ) -> None:
 
-        self.app = pg.mkQApp('CLAB datalogger Receiver')
+        self.app = pg.mkQApp('CLAB datalogger receiver')
 
         self.window = pg.GraphicsLayoutWidget()
 

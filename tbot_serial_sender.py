@@ -58,7 +58,7 @@ def get_random_data(
         dat_vals = []
         for f_i, field in enumerate(subplots.fields):
             val = get_random_single_data(
-                field.data_type) * 0.1 + seed[s_i][f_i]
+                field.data_type) * 0.2 + seed[s_i][f_i]
             dat[field.name] = val
             dat_vals.append(val)
 
