@@ -20,6 +20,7 @@ numpy==1.24.2
     # via
     #   contourpy
     #   matplotlib
+    #   pyqtgraph
     #   scipy
 packaging==23.1
     # via matplotlib
@@ -27,6 +28,14 @@ pillow==9.5.0
     # via matplotlib
 pyparsing==3.0.9
     # via matplotlib
+pyqt6==6.5.0
+    # via clab-datalogger-receiver (pyproject.toml)
+pyqt6-qt6==6.5.0
+    # via pyqt6
+pyqt6-sip==13.5.0
+    # via pyqt6
+pyqtgraph==0.13.3
+    # via clab-datalogger-receiver (pyproject.toml)
 pyserial==3.5
     # via clab-datalogger-receiver (pyproject.toml)
 python-dateutil==2.8.2
