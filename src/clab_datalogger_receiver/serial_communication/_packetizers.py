@@ -105,11 +105,11 @@ class TurtlebotThreadedConnection(SerialThreadedRecvTx):
     t_0: None | float | datetime = None
 
     def __init__(
-            self,
-            packet_spec: PlottingStruct,
-            rx_queue: Queue,
-            packet_type: Type[TimedPacketBase] = TimedPacket
-            # packet_type: Type[Packet] = DateTimedPacket
+        self,
+        packet_spec: PlottingStruct,
+        rx_queue: Queue,
+        packet_type: Type[TimedPacketBase] = TimedPacket
+        # packet_type: Type[Packet] = DateTimedPacket
     ) -> None:
         """Init the class to communicate with the turtlebot."""
         super().__init__()
@@ -133,7 +133,6 @@ class TurtlebotThreadedConnection(SerialThreadedRecvTx):
         return self.send_data(self.STOP_DATA_TOKEN)
 
     def _validate_package(self, packet: bytes) -> Tuple[bool, bytes | None]:
-
         valid, data = super()._validate_package(packet)
 
         if not valid:
@@ -160,14 +159,9 @@ class TurtlebotThreadedConnection(SerialThreadedRecvTx):
 
         data_i = 0
         for packet in self.packet_spec.subplots:
+            data_packet = data[data_i : (data_i + packet.struct_byte_size)]
 
-            data_packet = data[data_i:(data_i + packet.struct_byte_size)]
-
-            packets.append(
-                struct_unpack(
-                    packet.struct_format_string,
-                    data_packet
-                ))
+            packets.append(struct_unpack(packet.struct_format_string, data_packet))
             data_i += packet.struct_byte_size
 
         pck = self.packet_type.from_data(data=packets)

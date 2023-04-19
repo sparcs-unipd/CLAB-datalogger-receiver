@@ -10,8 +10,7 @@ from serial.tools.list_ports import comports
 
 
 def get_serial_port(
-        autoscan_port: bool = True,
-        autoscan_port_pattern: str = 'STMicroelectronics'
+    autoscan_port: bool = True, autoscan_port_pattern: str = 'STMicroelectronics'
 ) -> str | None:
     """Get a serial port.
 
@@ -40,11 +39,14 @@ def get_serial_port(
 
     if len(available_ports) > 1 and st_port_not_found:
         print('Select serial port')
-        print('\n'.join(
-            [
-                f' [{i}] | {p.name} | [{p.description}]'
-                for i, p in enumerate(available_ports)])
-              )
+        print(
+            '\n'.join(
+                [
+                    f' [{i}] | {p.name} | [{p.description}]'
+                    for i, p in enumerate(available_ports)
+                ]
+            )
+        )
         p_s_in = input()
 
         if p_s_in.isnumeric():
@@ -57,7 +59,7 @@ def get_serial_port(
             f'Selected device {available_ports[p_s].device}'
             f'[{available_ports[p_s].description}]...'
         ),
-        end=''
+        end='',
     )
 
     return available_ports[p_s].device

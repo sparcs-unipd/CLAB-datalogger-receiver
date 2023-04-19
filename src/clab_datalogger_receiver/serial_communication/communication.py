@@ -23,16 +23,14 @@ class TurtlebotReaderThread(ReaderThread):
         of communicating with the STM."""
 
     def __init__(
-        self,
-        serial_instance: Serial,
-        rx_packet_spec: PlottingStruct,
-        rx_queue: Queue
+        self, serial_instance: Serial, rx_packet_spec: PlottingStruct, rx_queue: Queue
     ) -> None:
         """
         Create a thread to connect to the turtlebot in a separate thread.
 
         It uses the `TurtlebotThreadedConnection` as a base protocol
         """
+
         def __get_tbot_protocol() -> TurtlebotThreadedConnection:
             return TurtlebotThreadedConnection(rx_packet_spec, rx_queue)
 
@@ -62,25 +60,22 @@ class TurtlebotSerialConnector:
     __packet_spec: PlottingStruct
 
     def __init__(
-            self,
-            rx_packet_spec: PlottingStruct,
-            baudrate=115200,
-            autoscan_port: bool = True,
-            autoscan_port_pattern: str = 'STMicroelectronics'
+        self,
+        rx_packet_spec: PlottingStruct,
+        baudrate=115200,
+        autoscan_port: bool = True,
+        autoscan_port_pattern: str = 'STMicroelectronics',
     ) -> None:
         """Init the connection class to manage the connection to the STM."""
         self.port = get_serial_port(
-            autoscan_port=autoscan_port,
-            autoscan_port_pattern=autoscan_port_pattern
+            autoscan_port=autoscan_port, autoscan_port_pattern=autoscan_port_pattern
         )
         self.serial = get_serial(self.port, baudrate)
         self.queue = Queue()
         self.__packet_spec = rx_packet_spec
 
         self.__thread = TurtlebotReaderThread(
-            self.serial,
-            self.__packet_spec,
-            self.queue
+            self.serial, self.__packet_spec, self.queue
         )
 
     def start(self):

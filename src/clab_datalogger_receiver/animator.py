@@ -13,7 +13,7 @@ from time import time as currtime
 from typing import Callable
 
 
-class Animator():
+class Animator:
     """This class is used to ensure that a method is called at an \
           (almost) constant frequency."""
 
@@ -30,7 +30,7 @@ class Animator():
         self.__func = func
         self.__t_prev = currtime()
 
-    def animate(self, *args, upd_counter: bool = True,  **kwargs) -> None:
+    def animate(self, *args, upd_counter: bool = True, **kwargs) -> None:
         """Call a function with the class fps."""
         t_now = currtime()
         if t_now < self.__t_prev + self.__t_s:
@@ -51,4 +51,4 @@ class Animator():
         assert fps > 0, 'FPS should be positive'
 
         self.__fps = fps
-        self.__t_s = 1/fps
+        self.__t_s = 1 / fps

@@ -8,6 +8,7 @@ Author:
 from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
+
 # from time import process_time as time
 
 # from time import thread_time
@@ -95,7 +96,6 @@ class TimedPacket(TimedPacketBase):
 
 
 if __name__ == '__main__':
-
     p0 = Packet([0, 1, 2])
     p1 = TimedPacket.from_data([4, 5, 6])
     p2 = DateTimedPacket.from_data([7, 8, 9])

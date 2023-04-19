@@ -2,10 +2,7 @@
 
 import sys
 
-from .main_functions import (
-    ClabDataLoggerReceiver,
-    main
-)
+from .main_functions import ClabDataLoggerReceiver, main
 
 
 MAT_FILENAME = 'test_data.mat'
@@ -16,7 +13,6 @@ PLOT_FPS = 60
 TW = 10  # s, time window
 
 if __name__ == '__main__':
-
     autoscan_pattern = 'STMicroelectronics'
 
     if len(sys.argv) > 1:
@@ -30,7 +26,7 @@ if __name__ == '__main__':
         max_time=MAX_ACQUISITION_TIME,
         t_w=TW,
         autoscan_port=True,
-        autoscan_port_pattern=autoscan_pattern
+        autoscan_port_pattern=autoscan_pattern,
     )
 
     main(dlogger)

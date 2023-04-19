@@ -47,7 +47,7 @@ types_dict = {
     'ssize_t': 'n',
     'size_t': 'N',
     'float': 'f',
-    'double': 'd'
+    'double': 'd',
 }
 
 
@@ -80,34 +80,25 @@ class DataStruct:
 
     @classmethod
     def from_dict(
-            cls: Type[DataStruct],
-            data_dict: Dict[str, str],
-            name: str | None = None):
+        cls: Type[DataStruct], data_dict: Dict[str, str], name: str | None = None
+    ):
         """Build the class from a dict of field names and types."""
         for field_type in data_dict.values():
-            assert field_type in types_dict, (f'Type "{field_type}"'
-                                              'not supported')
+            assert field_type in types_dict, f'Type "{field_type}"' 'not supported'
 
         fields = [
-            StructField(
-                data_type=types_dict[field_type],
-                name=field_name
-            )
-            for field_name, field_type
-            in data_dict.items()
+            StructField(data_type=types_dict[field_type], name=field_name)
+            for field_name, field_type in data_dict.items()
         ]
 
-        return cls(
-            fields,
-            name=name
-        )
+        return cls(fields, name=name)
 
     @classmethod
     def from_data_string(
         cls: Type[DataStruct],
         data_string: str,
         name: str | None = None,
-        names: List[str] | None = None
+        names: List[str] | None = None,
     ) -> DataStruct:
         """
         Load the configuration from a field list.
@@ -121,19 +112,13 @@ class DataStruct:
         name_idx = 0
 
         for field_type_str in data_string:
-
             if names is not None:
                 name = names[name_idx]
                 name_idx += 1
             else:
                 name = None
 
-            fields.append(
-                StructField(
-                    data_type=types_dict[field_type_str],
-                    name=name
-                )
-            )
+            fields.append(StructField(data_type=types_dict[field_type_str], name=name))
 
         return cls(fields, name=None)
 
@@ -152,10 +137,7 @@ class DataStruct:
 
         This format is compliant with the `struct.unwrap` method
         """
-        return ''.join([
-            types_dict[f.data_type]
-            for f in self.fields
-        ])
+        return ''.join([types_dict[f.data_type] for f in self.fields])
 
     @property
     def struct_byte_size(self) -> int:
@@ -197,36 +179,26 @@ class PlottingStruct:
 
         datas = []
         for data_i in data_s:
-
             # print(data_i)
             obj = data_i
 
             s_name = list(obj.keys())[0]
             s_types = obj[s_name]
 
-            datas.append(DataStruct.from_dict(
-                s_types,
-                name=s_name
-            ))
+            datas.append(DataStruct.from_dict(s_types, name=s_name))
             # print('name=', s_name)
             # print('types=', s_types)
 
         return cls(datas)
 
     @classmethod
-    def from_string_list(
-            cls,
-            packets_strings: List[str]):
+    def from_string_list(cls, packets_strings: List[str]):
         """
         Build the class from the list of packet spec strings.
 
         The packets sttrings follows the convention of `struct.unpack`
         """
-        return cls([
-            DataStruct.from_data_string(p_s)
-            for p_s
-            in packets_strings
-        ])
+        return cls([DataStruct.from_data_string(p_s) for p_s in packets_strings])
 
     def __getitem__(self, index: int):
         """Get the i-th subplot."""
@@ -258,13 +230,9 @@ class PlottingStruct:
 # -----------------------------------------------------------------------------
 # Tests
 if __name__ == '__main__':
+    dic = {'a': 'f', 'b': 'd', 'c': 'float'}
 
-    dic = {'a': 'f',
-           'b': 'd',
-           'c': 'float'
-           }
-
-    t = DataStruct.from_dict(dic,  name='test')
+    t = DataStruct.from_dict(dic, name='test')
 
     print('datastruct from dict')
     print(t.name)

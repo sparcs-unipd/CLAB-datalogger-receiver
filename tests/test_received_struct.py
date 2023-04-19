@@ -1,13 +1,11 @@
-
 from clab_datalogger_receiver.received_structure import (
     DataStruct,
     PlottingStruct,
-    StructField
+    StructField,
 )
 
 
 def confront_datastructs(tested: DataStruct, ground_truth: DataStruct) -> bool:
-
     if not tested.name == ground_truth.name:
         return False
 
@@ -23,11 +21,7 @@ def confront_datastructs(tested: DataStruct, ground_truth: DataStruct) -> bool:
     return True
 
 
-def confront_plotting_struct(
-    tested: PlottingStruct,
-    ground_truth: PlottingStruct
-):
-
+def confront_plotting_struct(tested: PlottingStruct, ground_truth: PlottingStruct):
     for s_t, s_gt in zip(tested.subplots, ground_truth.subplots):
         if not confront_datastructs(s_t, s_gt):
             return False
@@ -36,30 +30,23 @@ def confront_plotting_struct(
 
 
 def test_from_dict():
-
-    t = DataStruct.from_dict(
-        {
-            'a': 'f',
-            'b': 'd',
-            'c': 'float'
-        },
-        name='test')
-    t_test = DataStruct([
-        StructField(data_type='f', name='a'),
-        StructField(data_type='d', name='b'),
-        StructField(data_type='f', name='c'),
-    ], name='test')
+    t = DataStruct.from_dict({'a': 'f', 'b': 'd', 'c': 'float'}, name='test')
+    t_test = DataStruct(
+        [
+            StructField(data_type='f', name='a'),
+            StructField(data_type='d', name='b'),
+            StructField(data_type='f', name='c'),
+        ],
+        name='test',
+    )
 
     assert confront_datastructs(t, t_test)
 
 
 def test_from_yaml_single():
-
-    t = PlottingStruct([
-        DataStruct(name=None, fields=[
-            StructField(name='accel_data', data_type='f')
-        ])
-    ]
+    t = PlottingStruct(
+        [DataStruct(name=None, fields=[StructField(
+            name='accel_data', data_type='f')])]
     )
 
     t2 = PlottingStruct.from_yaml_file('tests/test_struct_cfg_single.yaml')
