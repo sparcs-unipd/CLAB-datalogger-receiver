@@ -55,7 +55,7 @@ def get_serial_port(
     print(
         (
             f'Selected device {available_ports[p_s].device}'
-            '[{available_ports[p_s].description}]...'
+            f'[{available_ports[p_s].description}]...'
         ),
         end=''
     )

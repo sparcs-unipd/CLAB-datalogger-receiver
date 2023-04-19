@@ -8,6 +8,7 @@ Author:
 """
 from __future__ import annotations
 
+import os
 import sys
 import time
 from abc import abstractmethod
@@ -179,7 +180,10 @@ class QTGraphicsWrapper(GraphicWrapperBase):
             t_w: float | None = 10
     ) -> None:
 
-        self.app = pg.mkQApp('CLAB datalogger receiver')
+        self.app = pg.mkQApp('CLAB datalogger Receiver')
+        img_path = os.path.abspath(os.path.dirname(__file__))
+        img_path += '/icons/SPARCS_logo_v2_nobackground.png'
+        self.app.setWindowIcon(QtGui.QIcon(img_path))
 
         self.window = pg.GraphicsLayoutWidget()
 
