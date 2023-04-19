@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import pyqtgraph as pg
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 from pyqtgraph import GraphicsLayout, PlotDataItem, PlotItem, PlotWidget
 from scipy.io import savemat
 
@@ -226,9 +226,8 @@ class QTGraphicsWrapper(GraphicWrapperBase):
         self.curves = datas
 
     def plt_update(self):
-
+        # TODO: check why CTRL+C does not raise properly exception here
         self.app.processEvents()
-        # time.sleep(1/100)
 
     def animate_frame(
         self,
@@ -262,6 +261,9 @@ class QTGraphicsWrapper(GraphicWrapperBase):
 class ClabDataLoggerReceiver:
     """Main class for managing the datalogging task."""
 
+    autoscan_port: bool
+    autoscan_port_pattern: str
+
     data_struct: PlottingStruct
     closed_queue: Queue[bool]
 
@@ -286,9 +288,16 @@ class ClabDataLoggerReceiver:
         self,
             fps: int = 10,
             max_time: float = -1,
-            t_w: float = 10
+            t_w: float = 10,
+            autoscan_port: bool | None = True,
+            autoscan_port_pattern: str = 'STMicroelectronics'
     ) -> None:
         """Initialize the class."""
+        if autoscan_port is None:
+            autoscan_port = True
+        self.autoscan_port = autoscan_port
+        self.autoscan_port_pattern = autoscan_port_pattern
+
         self.data_struct = PlottingStruct.from_yaml_file()
         self.closed_queue = Queue()
 
@@ -314,7 +323,11 @@ class ClabDataLoggerReceiver:
 
     def connect(self):
         """Establish connection."""
-        self.serial_conn = TurtlebotSerialConnector(self.data_struct)
+        self.serial_conn = TurtlebotSerialConnector(
+            self.data_struct,
+            autoscan_port=self.autoscan_port,
+            autoscan_port_pattern=self.autoscan_port_pattern
+        )
         self.rx_queue = self.serial_conn.queue
         self.serial_conn.connect()
 
@@ -439,11 +452,11 @@ def save_data(
 ):
     """Save the data of datalogger."""
     save_data_in = ''
+
     try:
         save_data_in = input('Do you want to save the data? [Y/n]')
     except KeyboardInterrupt:
         # Treat `CTRL+C` as a no
-        print('lol')
         save_data_in = 'n'
 
     if save_data_in not in 'Y\n':

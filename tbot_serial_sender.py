@@ -83,11 +83,21 @@ if __name__ == '__main__':
 
     data_struct = PlottingStruct.from_yaml_file()
 
+    autoscan = False
+    autoscan_pattern = 'STMicroelectronics'
+
+    if len(sys.argv) > 1:
+        autoscan = True
+        autoscan_pattern = sys.argv[1]
+
     BAUDRATE = 115200
 
     print(data_struct)
 
-    port = get_serial_port()
+    port = get_serial_port(
+        autoscan_port=autoscan,
+        autoscan_port_pattern=autoscan_pattern
+    )
     serial = get_serial(port)
 
     serial.write_timeout = 5

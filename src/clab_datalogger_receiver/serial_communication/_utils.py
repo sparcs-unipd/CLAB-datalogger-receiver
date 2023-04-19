@@ -9,10 +9,16 @@ from serial import Serial
 from serial.tools.list_ports import comports
 
 
-def get_serial_port(autoscan_st_port: bool = True) -> str | None:
+def get_serial_port(
+        autoscan_port: bool = True,
+        autoscan_port_pattern: str = 'STMicroelectronics'
+) -> str | None:
     """Get a serial port.
 
-    If more than one is available, \
+    If `autoscan_port==True`, then the `autoscan_port_pattern` is checked \
+        and the first port matching with the pattern is selected.
+
+    If more than one is available or  `autoscan_port == False`, \
         a prompt is presented to select which one to use.
 
     """
@@ -24,10 +30,10 @@ def get_serial_port(autoscan_st_port: bool = True) -> str | None:
 
     st_port_not_found = True
 
-    if autoscan_st_port and len(available_ports) > 1:
+    if autoscan_port and len(available_ports) > 1:
         for port_idx, port in enumerate(available_ports):
-            if 'STMicroelectronics' in port.description:
-                print('ST port found!')
+            if autoscan_port_pattern in port.description:
+                print('Automatic port found!')
                 st_port_not_found = False
                 p_s = port_idx
                 break

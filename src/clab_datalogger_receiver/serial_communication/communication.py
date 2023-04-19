@@ -64,10 +64,15 @@ class TurtlebotSerialConnector:
     def __init__(
             self,
             rx_packet_spec: PlottingStruct,
-            baudrate=115200
+            baudrate=115200,
+            autoscan_port: bool = True,
+            autoscan_port_pattern: str = 'STMicroelectronics'
     ) -> None:
         """Init the connection class to manage the connection to the STM."""
-        self.port = get_serial_port()
+        self.port = get_serial_port(
+            autoscan_port=autoscan_port,
+            autoscan_port_pattern=autoscan_port_pattern
+        )
         self.serial = get_serial(self.port, baudrate)
         self.queue = Queue()
         self.__packet_spec = rx_packet_spec
