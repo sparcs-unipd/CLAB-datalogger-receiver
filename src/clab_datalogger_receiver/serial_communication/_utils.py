@@ -39,7 +39,7 @@ def get_serial_port(
                 break
 
     if len(available_ports) > 1 and st_port_not_found:
-        print('Select serial port')
+        print('Available serial ports:')
         print(
             '\n'.join(
                 [
@@ -48,7 +48,14 @@ def get_serial_port(
                 ]
             )
         )
-        p_s_in = input()
+        try:
+            p_s_in = input('Select serial port index: ')
+        except EOFError:
+            print('Hello user you have pressed ctrl-c button.')
+        except KeyboardInterrupt:
+            print('Hello user you have pressed ctrl-c button.')
+        except Exception as e:
+            raise e
 
         if p_s_in.isnumeric():
             p_s = int(p_s_in)

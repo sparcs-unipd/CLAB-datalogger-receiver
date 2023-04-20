@@ -51,6 +51,10 @@ class GraphicWrapperBase:
         raise NotImplementedError
 
     @abstractmethod
+    def open_window(self):
+        raise NotImplementedError
+
+    @abstractmethod
     def plt_update(self):
         raise NotImplementedError
 
@@ -133,6 +137,9 @@ class GraphicsWrapper(GraphicWrapperBase):
 class QTGraphicsWrapper(GraphicWrapperBase):
     """Graphic wrapper class to use QT as a plotting backend."""
 
+    data_struct: PlottingStruct
+    close_callback: Callable
+
     figure: PlotWidget
     # window: GraphicsLayoutWidget
     window: GraphicsLayout
@@ -158,7 +165,7 @@ class QTGraphicsWrapper(GraphicWrapperBase):
 
     legend_backgrou_brush = pg.mkBrush('#22222255')
 
-    Tw: float
+    time_window: float
 
     def __init__(
         self,
@@ -166,38 +173,27 @@ class QTGraphicsWrapper(GraphicWrapperBase):
         data_struct: PlottingStruct,
         t_w: float | None = 10,
     ) -> None:
-        self.app = pg.mkQApp('CLAB datalogger receiver')
-        img_path = os.path.abspath(os.path.dirname(__file__))
-        img_path += '/icons/SPARCS_logo_v2_nobackground.png'
-        self.app.setWindowIcon(QtGui.QIcon(img_path))
-
-        self.window = pg.GraphicsLayoutWidget()
-
         assert t_w
-        self.Tw = t_w
-
-        self.create_subplots(data_struct)
-        self.window.closeEvent = close_callback
-
-        self.window.show()
+        self.time_window = t_w
+        self.data_struct = data_struct
+        self.close_callback = close_callback
 
     def create_subplots(self, rx_data_format: PlottingStruct):
         """Create the subplots and data items based on the data struct \
               given as parameter."""
+
         res = []
         datas = []
         for i, dat_format in enumerate(rx_data_format.subplots):
             axis = self.window.addPlot(
                 row=i,
                 col=0,
-                rowspan=len(rx_data_format) - 1,
-                colspan=1,
                 title=dat_format.name,
             )
 
             axis.showGrid(True)
             axis.enableAutoRange(x=False, y=True)
-            axis.setXRange(0, self.Tw)
+            axis.setXRange(0, self.time_window)
 
             axis.addLegend(offset=(-10, 10), brush=self.legend_backgrou_brush)
 
@@ -224,19 +220,32 @@ class QTGraphicsWrapper(GraphicWrapperBase):
     ):
         """Define what to do in order to refresh the plot."""
 
-        # print('x_size: ', len(dlogger.x_data_vector))
-
         x_data = dlogger.x_data_vector
         y_data = dlogger.y_data_vector[ax_i]
-
-        # self.curves[ax_i].setData(x_data, y_data[0])
 
         fields = dlogger.data_struct.subplots[ax_i].fields
 
         for l_i in range(len(fields)):
             self.curves[ax_i][l_i].setData({'x': x_data, 'y': y_data[l_i]})
 
-        axis.setXRange(max(0, x_data[-1] - self.Tw), max(self.Tw, x_data[-1]))
+        axis.setXRange(
+            max(0, x_data[-1] - self.time_window),
+            max(self.time_window, x_data[-1]),
+        )
+
+    def open_window(self):
+        """Opens Qt window."""
+        self.app = pg.mkQApp('CLAB datalogger receiver')
+        img_path = os.path.abspath(os.path.dirname(__file__))
+        img_path += '/icons/SPARCS_logo_v2_nobackground.png'
+        self.app.setWindowIcon(QtGui.QIcon(img_path))
+
+        self.window = pg.GraphicsLayoutWidget()
+
+        self.create_subplots(self.data_struct)
+        self.window.closeEvent = self.close_callback
+
+        self.window.show()
 
     def get_axes(self):
         return self.axes
@@ -312,6 +321,7 @@ class ClabDataLoggerReceiver:
         )
         self.rx_queue = self.serial_conn.queue
         self.serial_conn.connect()
+        self.graph_wrapper.open_window()
 
     def do_loop_while_true(self):
         """Execute `self.loop()` until exit is requested."""
@@ -431,6 +441,8 @@ def save_data(
 
     try:
         save_data_in = input('Do you want to save the data? [Y/n]')
+    except EOFError:
+        save_data_in = 'n'
     except KeyboardInterrupt:
         # Treat `CTRL+C` as a no
         save_data_in = 'n'
@@ -470,6 +482,7 @@ def save_data(
 
 def main(dlogger: ClabDataLoggerReceiver | None = None):
     """Run an example of a main function."""
+
     if dlogger is None:
         dlogger = ClabDataLoggerReceiver()
 
