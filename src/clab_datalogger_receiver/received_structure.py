@@ -80,11 +80,15 @@ class DataStruct:
 
     @classmethod
     def from_dict(
-        cls: Type[DataStruct], data_dict: Dict[str, str], name: str | None = None
+        cls: Type[DataStruct],
+        data_dict: Dict[str, str],
+        name: str | None = None,
     ):
         """Build the class from a dict of field names and types."""
         for field_type in data_dict.values():
-            assert field_type in types_dict, f'Type "{field_type}"' 'not supported'
+            assert field_type in types_dict, (
+                f'Type "{field_type}"' 'not supported'
+            )
 
         fields = [
             StructField(data_type=types_dict[field_type], name=field_name)
@@ -118,7 +122,9 @@ class DataStruct:
             else:
                 name = None
 
-            fields.append(StructField(data_type=types_dict[field_type_str], name=name))
+            fields.append(
+                StructField(data_type=types_dict[field_type_str], name=name)
+            )
 
         return cls(fields, name=None)
 
@@ -198,7 +204,9 @@ class PlottingStruct:
 
         The packets sttrings follows the convention of `struct.unpack`
         """
-        return cls([DataStruct.from_data_string(p_s) for p_s in packets_strings])
+        return cls(
+            [DataStruct.from_data_string(p_s) for p_s in packets_strings]
+        )
 
     def __getitem__(self, index: int):
         """Get the i-th subplot."""

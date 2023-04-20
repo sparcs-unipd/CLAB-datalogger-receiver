@@ -17,6 +17,8 @@ MAX_ACQUISITION_TIME = 100  # s
 PLOT_FPS = 20
 
 if __name__ == '__main__':
-    dlogger = ClabDataLoggerReceiver(fps=PLOT_FPS, max_time=MAX_ACQUISITION_TIME)
+    dlogger = ClabDataLoggerReceiver(
+        fps=PLOT_FPS, max_time=MAX_ACQUISITION_TIME
+    )
 
     main(dlogger)

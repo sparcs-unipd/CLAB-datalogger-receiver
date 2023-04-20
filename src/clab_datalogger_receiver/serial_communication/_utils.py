@@ -10,7 +10,8 @@ from serial.tools.list_ports import comports
 
 
 def get_serial_port(
-    autoscan_port: bool = True, autoscan_port_pattern: str = 'STMicroelectronics'
+    autoscan_port: bool = True,
+    autoscan_port_pattern: str = 'STMicroelectronics',
 ) -> str | None:
     """Get a serial port.
 

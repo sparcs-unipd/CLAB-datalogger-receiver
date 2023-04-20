@@ -22,7 +22,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from PyQt6 import QtGui, QtWidgets
 from pyqtgraph import GraphicsLayout, PlotDataItem, PlotItem, PlotWidget
-from scipy.io import savemat
+from scipy.io import savemat, loadmat
 
 from .animator import Animator
 from .received_structure import PlottingStruct
@@ -33,12 +33,17 @@ from .serial_communication.packets import TimedPacketBase
 class GraphicWrapperBase:
     @abstractmethod
     def __init__(
-        self, close_callback: Callable, data_struct: PlottingStruct, Tw: float | None
+        self,
+        close_callback: Callable,
+        data_struct: PlottingStruct,
+        Tw: float | None,
     ):
         raise NotImplementedError
 
     @abstractmethod
-    def animate_frame(self, ax_i: int, axis: Axes, dlogger: ClabDataLoggerReceiver):
+    def animate_frame(
+        self, ax_i: int, axis: Axes, dlogger: ClabDataLoggerReceiver
+    ):
         raise NotImplementedError
 
     @abstractmethod
@@ -84,7 +89,9 @@ class GraphicsWrapper(GraphicWrapperBase):
 
         self.axes = res
 
-    def animate_frame(self, ax_i: int, axis: Axes, dlogger: ClabDataLoggerReceiver):
+    def animate_frame(
+        self, ax_i: int, axis: Axes, dlogger: ClabDataLoggerReceiver
+    ):
         """Define what to do in order to refresh the plot."""
         axis.clear()
 
@@ -149,6 +156,8 @@ class QTGraphicsWrapper(GraphicWrapperBase):
         ]
     ]
 
+    legend_backgrou_brush = pg.mkBrush('#22222255')
+
     Tw: float
 
     def __init__(
@@ -157,7 +166,7 @@ class QTGraphicsWrapper(GraphicWrapperBase):
         data_struct: PlottingStruct,
         t_w: float | None = 10,
     ) -> None:
-        self.app = pg.mkQApp('CLAB datalogger Receiver')
+        self.app = pg.mkQApp('CLAB datalogger receiver')
         img_path = os.path.abspath(os.path.dirname(__file__))
         img_path += '/icons/SPARCS_logo_v2_nobackground.png'
         self.app.setWindowIcon(QtGui.QIcon(img_path))
@@ -173,6 +182,8 @@ class QTGraphicsWrapper(GraphicWrapperBase):
         self.window.show()
 
     def create_subplots(self, rx_data_format: PlottingStruct):
+        """Create the subplots and data items based on the data struct \
+              given as parameter."""
         res = []
         datas = []
         for i, dat_format in enumerate(rx_data_format.subplots):
@@ -188,7 +199,7 @@ class QTGraphicsWrapper(GraphicWrapperBase):
             axis.enableAutoRange(x=False, y=True)
             axis.setXRange(0, self.Tw)
 
-            axis.addLegend(offset=(-10, 10), brush=pg.mkBrush('#22222255'))
+            axis.addLegend(offset=(-10, 10), brush=self.legend_backgrou_brush)
 
             data_plots = [
                 axis.plot(pen=self.pens[f_i], name=n.name)
@@ -205,7 +216,12 @@ class QTGraphicsWrapper(GraphicWrapperBase):
         # TODO: check why CTRL+C does not raise properly exception here
         self.app.processEvents()
 
-    def animate_frame(self, ax_i: int, axis: PlotItem, dlogger: ClabDataLoggerReceiver):
+    def animate_frame(
+        self,
+        ax_i: int,
+        axis: PlotItem,
+        dlogger: ClabDataLoggerReceiver,
+    ):
         """Define what to do in order to refresh the plot."""
 
         # print('x_size: ', len(dlogger.x_data_vector))
@@ -306,7 +322,9 @@ class ClabDataLoggerReceiver:
 
         self.graph_wrapper.close()
 
-    def do_loop_while_true_profiling(self, filename_out: str = 'profile_out.prof'):
+    def do_loop_while_true_profiling(
+        self, filename_out: str = 'profile_out.prof'
+    ):
         """Execute the loop_while_true function while also profiling."""
         # pylint: disable=import-outside-toplevel
         import cProfile
@@ -373,7 +391,9 @@ class ClabDataLoggerReceiver:
         self.y_data_vector = [[] for _ in range(len(self.data_struct))]
 
         for y_i in range(len(self.data_struct)):
-            self.y_data_vector[y_i] = [[] for _ in range(len(self.data_struct[y_i]))]
+            self.y_data_vector[y_i] = [
+                [] for _ in range(len(self.data_struct[y_i]))
+            ]
 
     def append_data(self, packet: TimedPacketBase):
         """Appends the new packet to the data"""
@@ -394,12 +414,18 @@ class ClabDataLoggerReceiver:
         """
         axes = self.graph_wrapper.get_axes()
         for ax_i, axis in enumerate(axes):
-            self.animator.animate(ax_i, axis, self, upd_counter=(ax_i) == len(axes) - 1)
+            self.animator.animate(
+                ax_i, axis, self, upd_counter=(ax_i) == len(axes) - 1
+            )
 
         self.graph_wrapper.plt_update()
 
 
-def save_data(datalogger: ClabDataLoggerReceiver, mat_filename: str = 'out_data.mat'):
+def save_data(
+    datalogger: ClabDataLoggerReceiver,
+    mat_filename: str = 'out_data.mat',
+    check_data: bool = False,
+):
     """Save the data of datalogger."""
     save_data_in = ''
 
@@ -427,11 +453,19 @@ def save_data(datalogger: ClabDataLoggerReceiver, mat_filename: str = 'out_data.
 
         file_dict['turtlebot_data'][name] = y_data
 
-        file_dict['turtlebot_data']['field_names'][name] = [f.name for f in sp.fields]
+        file_dict['turtlebot_data']['field_names'][name] = [
+            f.name for f in sp.fields
+        ]
 
     savemat(mat_filename, mdict=file_dict)
 
     print('Data saved.')
+
+    if check_data:
+        print('Checking data...')
+        # b = loadmat(mat_filename)
+        raise NotImplementedError
+        print('Data is ok')
 
 
 def main(dlogger: ClabDataLoggerReceiver | None = None):

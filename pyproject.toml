@@ -42,3 +42,8 @@ push            = false
 # Minimum requirements for the build system to execute.
 requires = ["setuptools", "wheel"]  # PEP 508 specifications.
 build-backend = "setuptools.build_meta"
+
+[tool.black]
+# line-length = 88
+line-length = 80
+skip-string-normalization = 1

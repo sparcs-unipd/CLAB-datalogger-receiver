@@ -21,7 +21,9 @@ def confront_datastructs(tested: DataStruct, ground_truth: DataStruct) -> bool:
     return True
 
 
-def confront_plotting_struct(tested: PlottingStruct, ground_truth: PlottingStruct):
+def confront_plotting_struct(
+    tested: PlottingStruct, ground_truth: PlottingStruct
+):
     for s_t, s_gt in zip(tested.subplots, ground_truth.subplots):
         if not confront_datastructs(s_t, s_gt):
             return False
@@ -45,8 +47,12 @@ def test_from_dict():
 
 def test_from_yaml_single():
     t = PlottingStruct(
-        [DataStruct(name=None, fields=[StructField(
-            name='accel_data', data_type='f')])]
+        [
+            DataStruct(
+                name=None,
+                fields=[StructField(name='accel_data', data_type='f')],
+            )
+        ]
     )
 
     t2 = PlottingStruct.from_yaml_file('tests/test_struct_cfg_single.yaml')

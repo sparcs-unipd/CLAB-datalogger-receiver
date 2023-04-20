@@ -161,7 +161,9 @@ class TurtlebotThreadedConnection(SerialThreadedRecvTx):
         for packet in self.packet_spec.subplots:
             data_packet = data[data_i : (data_i + packet.struct_byte_size)]
 
-            packets.append(struct_unpack(packet.struct_format_string, data_packet))
+            packets.append(
+                struct_unpack(packet.struct_format_string, data_packet)
+            )
             data_i += packet.struct_byte_size
 
         pck = self.packet_type.from_data(data=packets)

@@ -27,10 +27,13 @@ def get_random_single_data(datatype: str):
     if datatype == 'f':
         return random()
 
-    raise NotImplementedError(f'random data for type {datatype} is not implemented')
+    raise NotImplementedError(
+        f'random data for type {datatype} is not implemented'
+    )
 
 
 def get_random_seed(rx_data_struct: PlottingStruct) -> list[list[float]]:
+    """Return random values for each plot item in the data structure."""
     ret = []
 
     for subplots in rx_data_struct.subplots:
@@ -42,7 +45,9 @@ def get_random_seed(rx_data_struct: PlottingStruct) -> list[list[float]]:
     return ret
 
 
-def get_random_data(rx_data_struct: PlottingStruct, seed: list[list[float]]) -> bytes:
+def get_random_data(
+    rx_data_struct: PlottingStruct, seed: list[list[float]]
+) -> bytes:
     """Return data representing the packet specified by `data_struct`."""
     subs = []
 
@@ -50,7 +55,8 @@ def get_random_data(rx_data_struct: PlottingStruct, seed: list[list[float]]) -> 
         dat = {}
         dat_vals = []
         for f_i, field in enumerate(subplots.fields):
-            val = get_random_single_data(field.data_type) * 0.2 + seed[s_i][f_i]
+            val = get_random_single_data(field.data_type)
+            val = val * 0.6 + seed[s_i][f_i]
             dat[field.name] = val
             dat_vals.append(val)
 
@@ -69,7 +75,11 @@ def send_package(
     return serial_obj.write(bytes_to_send)
 
 
-if __name__ == '__main__':
+BAUDRATE = 115200
+
+
+def main():
+    """Start serial transmission to a serial port"""
     data_struct = PlottingStruct.from_yaml_file()
 
     autoscan = False
@@ -78,8 +88,6 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         autoscan = True
         autoscan_pattern = sys.argv[1]
-
-    BAUDRATE = 115200
 
     print(data_struct)
 
@@ -96,6 +104,7 @@ if __name__ == '__main__':
 
     # SEND_DATA_TOKEN = b'\x41'
     # while serial.read_until(b'\0x00') != SEND_DATA_TOKEN:
+
     #     pass
 
     # print('starting sending data')
@@ -115,4 +124,8 @@ if __name__ == '__main__':
 
     serial.close()
 
-    sys.exit(0)
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
