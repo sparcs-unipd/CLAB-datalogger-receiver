@@ -1,6 +1,6 @@
 [project]
 name = "clab-datalogger-receiver"
-version = "0.1.0"
+version = "0.1.1"
 description = "A porting of another MATLAB implementation of the same data receiver and plotter."
 license = {file='LICENSE'}
 authors = [ 
@@ -27,7 +27,7 @@ dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
 repository = "https://github.com/sparcs-unipd/CLAB-datalogger-receiver"
 
 [tool.bumpver]
-current_version = "0.1.0"
+current_version = "0.1.1"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message  = "Bump version {old_version} -> {new_version}"
 commit          = true
