@@ -13,7 +13,7 @@ from serial import Serial
 from serial.threaded import ReaderThread
 
 from ._packetizers import TurtlebotThreadedConnection
-from ._utils import get_serial, get_serial_port
+from ._utils import get_serial, get_serial_port_from_console_if_needed
 from .packets import TimedPacketBase
 from ..received_structure import PlottingStruct
 
@@ -52,7 +52,7 @@ class TurtlebotReaderThread(ReaderThread):
         return trans, prot
 
 
-class TurtlebotSerialConnector:
+class ManualPortTurtlebotSerialConnector:
     """Class representing the turtlebot asinc serial communication."""
 
     serial: Serial
@@ -65,30 +65,33 @@ class TurtlebotSerialConnector:
     def __init__(
         self,
         rx_packet_spec: PlottingStruct,
-        baudrate=115200,
-        autoscan_port: bool = True,
-        autoscan_port_pattern: str = 'STMicroelectronics',
+        serial: Serial,
+        existing_queue: Queue | None,
     ) -> None:
         """Init the connection class to manage the connection to the STM."""
-        self.port = get_serial_port(
-            autoscan_port=autoscan_port,
-            autoscan_port_pattern=autoscan_port_pattern,
-        )
-        self.serial = get_serial(self.port, baudrate)
-        self.queue = Queue()
+
+        if existing_queue is None:
+            self.queue = Queue()
+        else:
+            self.queue = existing_queue
+
         self.__packet_spec = rx_packet_spec
+
+        self.serial = serial
 
         self.__thread = TurtlebotReaderThread(
             self.serial, self.__packet_spec, self.queue
         )
 
-    def start(self):
+        self.__thread.name = 'Serial comm Thread'
+
+    def _start(self):
         """Start the underlying thread."""
         self.__thread.start()
 
     def connect(self):
         """Connect to the STM32."""
-        self.start()
+        self._start()
         self.__transport, self.__protocol = self.__thread.connect()
         self.__protocol.signal_start_communication()
 
@@ -98,6 +101,28 @@ class TurtlebotSerialConnector:
         # TODO: test this
         # self.serial.close()
         self.__thread.close()
+
+
+class TurtlebotSerialConnector(ManualPortTurtlebotSerialConnector):
+    """Class representing the turtlebot asinc serial communication."""
+
+    def __init__(
+        self,
+        rx_packet_spec: PlottingStruct,
+        baudrate=115200,
+        autoscan_port: bool = True,
+        autoscan_port_pattern: str = 'STMicroelectronics',
+    ) -> None:
+        """Init the connection class to manage the connection to the STM."""
+        self.port = get_serial_port_from_console_if_needed(
+            autoscan_port=autoscan_port,
+            autoscan_port_pattern=autoscan_port_pattern,
+        )
+
+        super().__init__(
+            rx_packet_spec,
+            serial=get_serial(self.port, baudrate),
+        )
 
 
 if __name__ == '__main__':

@@ -18,8 +18,10 @@ from serial import Serial
 from clab_datalogger_receiver.received_structure import PlottingStruct
 from clab_datalogger_receiver.serial_communication._utils import (
     get_serial,
-    get_serial_port,
+    get_serial_port_from_console_if_needed,
 )
+
+from math import sin
 
 
 def get_random_single_data(datatype: str):
@@ -45,6 +47,9 @@ def get_random_seed(rx_data_struct: PlottingStruct) -> list[list[float]]:
     return ret
 
 
+idx_sin = 2
+
+
 def get_random_data(
     rx_data_struct: PlottingStruct, seed: list[list[float]]
 ) -> bytes:
@@ -57,6 +62,8 @@ def get_random_data(
         for f_i, field in enumerate(subplots.fields):
             val = get_random_single_data(field.data_type)
             val = val * 0.6 + seed[s_i][f_i]
+            if f_i == idx_sin:
+                val *= sin(time())
             dat[field.name] = val
             dat_vals.append(val)
 
@@ -91,7 +98,7 @@ def main():
 
     print(data_struct)
 
-    port = get_serial_port(
+    port = get_serial_port_from_console_if_needed(
         autoscan_port=autoscan, autoscan_port_pattern=autoscan_pattern
     )
     serial = get_serial(port)
