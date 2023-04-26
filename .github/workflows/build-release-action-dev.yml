@@ -1,10 +1,10 @@
 name: Package and release application
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - dev
-
     # tags:
     #   - "*"
 
