@@ -2,21 +2,30 @@ name: Package and release application
 
 on:
   push:
-    tags:
-      - "*"
+    branches:
+      - dev
+
+    # tags:
+    #   - "*"
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Package Application
-        uses: JackMcKew/pyinstaller-action-windows@main
+      - uses: actions/setup-python@v4
         with:
-          path: .
-          spec: clab_datalogger_receiver_app.spec
+          python-version: 3.11
+
+      # if pytest is needed, install it here
+      - name: Install Python required packages
+        run: pip install requirements.txt pyinstaller
+
+      - name: Package python project
+        run: ./scripts/build.bat
+        shell: cmd
+        # spec: clab_datalogger_receiver_app.spec
 
       - name: Create Release
         id: create_release
@@ -35,6 +44,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/windows/clab_datalogger_receiver_app.exe
+          asset_path: ./dist/clab_datalogger_receiver_app.exe
           asset_name: clab_datalogger_receiver.exe
           asset_content_type: application/vnd.microsoft.portable-executable
