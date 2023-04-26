@@ -10,7 +10,6 @@ import qdarktheme
 from PyQt6 import QtGui
 from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
-from pyqtgraph import PlotDataItem, PlotItem
 from serial import Serial
 from serial.tools.list_ports_common import ListPortInfo
 

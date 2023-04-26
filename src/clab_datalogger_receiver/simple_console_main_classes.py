@@ -15,10 +15,7 @@ from queue import Empty as q_Empty
 from queue import Queue
 from typing import Callable
 
-import matplotlib.pyplot as plt
 import pyqtgraph as pg
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 from PyQt6 import QtGui, QtWidgets
 from pyqtgraph import GraphicsLayout, PlotDataItem, PlotItem, PlotWidget
 
@@ -41,9 +38,7 @@ class GraphicWrapperBase:
         raise NotImplementedError
 
     @abstractmethod
-    def animate_frame(
-        self, ax_i: int, axis: Axes, dlogger: ClabDataLoggerReceiver
-    ):
+    def animate_frame(self, ax_i: int, axis, dlogger: ClabDataLoggerReceiver):
         raise NotImplementedError
 
     @abstractmethod
@@ -61,80 +56,6 @@ class GraphicWrapperBase:
     @abstractmethod
     def get_axes(self):
         raise NotImplementedError
-
-
-class GraphicsWrapper(GraphicWrapperBase):
-    figure: Figure
-    axes: list[Axes]
-    data_struct: PlottingStruct
-
-    def __init__(
-        self,
-        close_callback: Callable,
-        data_struct: PlottingStruct,
-        Tw: float | None = None,
-    ) -> None:
-        self.figure = plt.figure()
-
-        self.figure.canvas.mpl_connect('close_event', close_callback)
-
-        self.create_subplots(data_struct)
-
-        plt.ion()
-        plt.show()
-
-    def create_subplots(self, rx_data_format: PlottingStruct):
-        res = []
-        for i in range(len(rx_data_format)):
-            res.append(
-                self.figure.add_subplot(
-                    len(rx_data_format),  # type: ignore
-                    1,
-                    i + 1,
-                )
-            )
-            plt.grid(True)
-
-        self.axes = res
-
-    def animate_frame(
-        self, ax_i: int, axis: Axes, dlogger: ClabDataLoggerReceiver
-    ):
-        """Define what to do in order to refresh the plot."""
-        axis.clear()
-
-        data_s = dlogger.data_struct[ax_i]
-        x_data = dlogger.x_data_vector
-        y_data = dlogger.y_data_vector[ax_i]
-
-        for i in range(len(data_s)):
-            axis.plot(x_data[-100:], y_data[i][-100:])
-
-        names = [s_i.name for s_i in data_s]
-
-        for i, name in enumerate(names):
-            if name is not None:
-                names[i] = name
-            else:
-                names[i] = str(i)
-
-        if data_s.name is not None:
-            axis.set_title(data_s.name)
-        else:
-            axis.set_title('received data')
-
-        axis.legend(names, loc='upper right')
-        axis.grid(True)
-
-    def close(self):
-        plt.close()
-
-    def plt_update(self):
-        plt.draw()
-        plt.pause(1 / 1000)
-
-    def get_axes(self):
-        return self.axes
 
 
 @dataclass
