@@ -177,8 +177,8 @@ class PlottingStruct:
         file_exists = os.path.isfile(filename)
 
         if not file_exists:
-            with open(template_file_path, 'rb', encoding='utf-8') as t_file:
-                with open(filename, 'wb', encoding='utf-8') as w_file:
+            with open(template_file_path, 'rb') as t_file:
+                with open(filename, 'wb') as w_file:
                     w_file.write(t_file.read())
             print('File created from template')
 
