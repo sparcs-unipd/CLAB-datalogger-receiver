@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Package Application
         uses: JackMcKew/pyinstaller-action-windows@main
@@ -17,7 +17,7 @@ jobs:
           path: .
           spec: clab_datalogger_receiver_app.spec
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: clab_datalogger_receiver
-          path: src/dist/windows
+          path: /dist/windows/
