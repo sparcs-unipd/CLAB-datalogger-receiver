@@ -11,7 +11,6 @@ a = Analysis(
     datas=[('src\\clab_datalogger_receiver\\icons\\SPARCS_logo_v2_nobackground.png', 'icons')],
     hiddenimports=[],
     hookspath=[],
-    hooksconfig={},
     runtime_hooks=[],
     excludes=[],
     win_no_prefer_redirects=False,
