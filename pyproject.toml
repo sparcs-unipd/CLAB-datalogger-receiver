@@ -13,7 +13,8 @@ dependencies = [
     'pyyaml>=6.0',
     'typing;python_version < "3.5"',
     'PyQt6>=6.5.0',
-    'pyqtgraph>=0.13.3'
+    'pyqtgraph>=0.13.3',
+    'pyqtdarktheme>=2.1.0'
 ]
 readme= "README.md"
 requires-python = ">=3.11"
