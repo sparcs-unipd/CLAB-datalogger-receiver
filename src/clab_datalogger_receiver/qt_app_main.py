@@ -26,6 +26,7 @@ from .simple_console_main_classes import (
     SubplotsReferences,
 )
 from .widgets import TopMenuWidget
+from .base.common import resource_path
 
 import numpy as np
 
@@ -347,8 +348,12 @@ class MainWindow(QMainWindow):
 
         # img_path = os.path.abspath(os.path.dirname(__file__))
         # img_path += '/icons/SPARCS_logo_v2_nobackground.png'
-        img_path = os.path.abspath(os.path.dirname(__file__))
-        img_path += '/icons/SPARCS_logo_v2_nobackground.png'
+        img_path_folder = os.path.abspath(os.path.dirname(__file__))
+
+        # img_path += '/icons/SPARCS_logo_v2_nobackground.png'
+        img_path = './icons/SPARCS_logo_v2_nobackground.png'
+        img_path = resource_path(img_path, img_path_folder)
+        print(img_path)
         qdarktheme.setup_theme()
 
         self.setWindowIcon(QtGui.QIcon(img_path))

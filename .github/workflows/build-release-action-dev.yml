@@ -3,10 +3,8 @@ name: Package and release application
 on:
   workflow_dispatch:
   push:
-    branches:
-      - dev
-    # tags:
-    #   - "*"
+    tags:
+      - "*"
 
 jobs:
   build:
@@ -28,7 +26,6 @@ jobs:
       - name: Package python project
         run: .\scripts\build.bat
         shell: cmd
-        # spec: clab_datalogger_receiver_app.spec
 
       - name: Create Release
         id: create_release

@@ -9,6 +9,8 @@ from typing import Dict, List, Type
 
 from yaml import safe_load as load_yaml
 
+from .base.common import resource_path
+
 types_dict = {
     'c': 'c',
     'x': 'x',
@@ -177,7 +179,7 @@ class PlottingStruct:
         file_exists = os.path.isfile(filename)
 
         if not file_exists:
-            with open(template_file_path, 'rb') as t_file:
+            with open(resource_path(template_file_path), 'rb') as t_file:
                 with open(filename, 'wb') as w_file:
                     w_file.write(t_file.read())
             print('File created from template')
