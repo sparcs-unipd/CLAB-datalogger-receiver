@@ -2,10 +2,8 @@ name: Package and release application
 
 on:
   push:
-    branches:
-      - dev
-    # tags:
-    #   - "*"
+    tags:
+      - "*"
 
 jobs:
   build:
@@ -28,14 +26,13 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          draft: true
-          # draft: false
+          draft: false
           prerelease: false
 
       - name: Upload windows artifact
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./dist/windows/clab_datalogger_receiver_app.exe
