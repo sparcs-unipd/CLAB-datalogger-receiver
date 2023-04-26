@@ -2,7 +2,8 @@ name: Package Application with Pyinstaller
 
 on:
   push:
-    branches: [dev]
+    branches:
+      - main
 
 jobs:
   build:
@@ -19,5 +20,5 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: clab_datalogger_receiver
-          path: ./dist/windows/
+          name: clab_datalogger_receiver.exe
+          path: ./dist/windows/clab_datalogger_receiver.exe
