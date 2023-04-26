@@ -15,7 +15,7 @@ jobs:
         uses: JackMcKew/pyinstaller-action-windows@main
         with:
           path: .
-          spec: qt_app.spec
+          spec: clab_datalogger_receiver_app.spec
 
       - uses: actions/upload-artifact@v2
         with:
