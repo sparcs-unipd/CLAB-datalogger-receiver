@@ -20,7 +20,7 @@ jobs:
 
       # if pytest is needed, install it here
       - name: Install Python required packages
-        run: pip install requirements.txt pyinstaller
+        run: pip install -r requirements.txt pyinstaller
 
       - name: Package python project
         run: ./scripts/build.bat
