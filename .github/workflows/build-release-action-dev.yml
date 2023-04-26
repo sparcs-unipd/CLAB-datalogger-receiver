@@ -19,11 +19,14 @@ jobs:
           python-version: 3.11
 
       # if pytest is needed, install it here
+      # - name: Install Python required packages
+      #   run: pip install -r requirements.txt pyinstaller
+
       - name: Install Python required packages
-        run: pip install -r requirements.txt pyinstaller
+        run: pip install . && pip install pyinstaller
 
       - name: Package python project
-        run: ./scripts/build.bat
+        run: .\scripts\build.bat
         shell: cmd
         # spec: clab_datalogger_receiver_app.spec
 
