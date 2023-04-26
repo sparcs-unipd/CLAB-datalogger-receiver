@@ -5,6 +5,6 @@ Authors:
     Alberto Morato
     Marco Perin
 
-Version: 0.1.1
+Version: 0.2.0
 
 """
