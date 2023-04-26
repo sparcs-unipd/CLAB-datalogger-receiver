@@ -50,6 +50,8 @@ types_dict = {
     'double': 'd',
 }
 
+template_file_path: str = 'templates/struct_cfg_template.yaml'
+
 
 @dataclass
 class StructField:
@@ -175,7 +177,10 @@ class PlottingStruct:
         file_exists = os.path.isfile(filename)
 
         if not file_exists:
-            raise FileNotFoundError("Create config file.")
+            with open(template_file_path, 'rb', encoding='utf-8') as t_file:
+                with open(filename, 'wb', encoding='utf-8') as w_file:
+                    w_file.write(t_file.read())
+            print('File created from template')
 
         with open(filename, 'rt', encoding='utf-8') as file:
             data_s = load_yaml(file)

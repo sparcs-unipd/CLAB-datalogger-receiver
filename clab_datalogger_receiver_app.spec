@@ -8,7 +8,7 @@ a = Analysis(
     ['clab_datalogger_receiver_app.py'],
     pathex=[],
     binaries=[],
-    datas=[('src\\clab_datalogger_receiver\\icons\\SPARCS_logo_v2_nobackground.png', 'icons')],
+    datas=[('src\\clab_datalogger_receiver\\icons\\SPARCS_logo_v2_nobackground.png', 'icons'), ('templates\\struct_cfg_template.yaml\\', 'templates')],
     hiddenimports=[],
     hookspath=[],
     runtime_hooks=[],
