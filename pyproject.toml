@@ -11,13 +11,14 @@ dependencies = [
     'pyserial>=3.5',
     'scipy>=1.10.1',
     'pyyaml>=6.0',
+    'typing_extension;python_version < "3.11"', # for typing.Self
     'typing;python_version < "3.5"',
     'PyQt6>=6.5.0',
     'pyqtgraph>=0.13.3',
     'pyqtdarktheme>=2.1.0'
 ]
 readme= "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 
 [project.optional-dependencies]
 dev = ["black", "bumpver", "isort", "pip-tools", "pytest", "pyinstaller"]

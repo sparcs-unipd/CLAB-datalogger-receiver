@@ -7,7 +7,12 @@ Author:
 """
 
 from queue import Queue
-from typing import Self, cast
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
+
+from typing import cast
 
 from serial import Serial
 from serial.threaded import ReaderThread
