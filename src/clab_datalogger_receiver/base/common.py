@@ -23,7 +23,7 @@ def resource_path(relativePath: str, subfolder: str = '') -> str:
             basePath = sys._MEIPASS2
         except Exception:
             basePath = os.path.join(os.path.abspath("."), subfolder)
-            print('bp: ', basePath)
+            # print('bp: ', basePath)
     path = os.path.join(basePath, relativePath)
-    print('p: ', path)
+    # print('p: ', path)
     return path
