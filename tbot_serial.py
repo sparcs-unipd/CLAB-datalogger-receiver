@@ -21,4 +21,8 @@ if __name__ == '__main__':
         fps=PLOT_FPS, max_time=MAX_ACQUISITION_TIME
     )
 
+    print('######## WARN #########')
+    print('This should keep working, but is not maintained.')
+    print('#######################')
+
     main(dlogger)
