@@ -12,6 +12,12 @@ and also to increase code portability.
 To have a better insight of te project, you can head over to the more extensive
 [docs](/docs/index.md).
 
+## WARNING
+
+**You NEED to configure the data received structure via the** ``struct_cfg.yaml`` **file**.
+
+If it is not found in the folder where the executable is run,
+it is created based on the `templates/struct_cfg_template.yaml`.
 
 ## How-to
 
