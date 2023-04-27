@@ -12,6 +12,12 @@ and also to increase code portability.
 To have a better insight of te project, you can head over to the more extensive
 [docs](/docs/index.md).
 
+## WARNING
+
+**You NEED to configure the data received structure via the** [`struct_cfg.yaml`](struct_cfg.yaml) **file**.
+
+If it is not found in the folder where the executable is run,
+it is created based on the [`templates/struct_cfg_template.yaml`](templates/struct_cfg_template.yaml).
 
 ## How-to
 
@@ -39,5 +45,5 @@ The script will then ask if it should save the data (default is yes).
 
 It is possible to configure the serial data format in (mainly) two ways:
 
-- By editing the file `struct_cfg.yaml`, that is loaded by the function call `PlottingStruct.from_yaml_file()`
+- By editing the file [`struct_cfg.yaml`](struct_cfg.yaml), that is loaded by the function call `PlottingStruct.from_yaml_file()`
 - By calling the function `PlottingStruct.from_string_list(formats list)`, where formats is a list of format string that follows the convention of python's `struct`, as in [here](https://docs.python.org/3/library/struct.html#format-characters)
