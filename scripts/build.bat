@@ -10,7 +10,7 @@ python -m nuitka ^
     --onefile-tempdir-spec="%%CACHE_DIR%%/%%COMPANY%%/%%PRODUCT%%/%%VERSION%%" ^
     --company-name=sparcs-unipd ^
     --product-name=clab_datalogger_receiver ^
-    --file-version=0.2.1 ^
-    --product-version=0.2.1 ^
+    --file-version=0.2.2 ^
+    --product-version=0.2.2 ^
     %* ^
     .\clab_datalogger_receiver_app.py
