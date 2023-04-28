@@ -22,9 +22,9 @@ jobs:
 
       - name: Install Python required packages
         run: |
-        python -m pip install --upgrade pip
-        python -m pip install -e .
-        python -m pip install nuitka
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install nuitka
 
       - name: Package python project
         run: .\scripts\build.bat
