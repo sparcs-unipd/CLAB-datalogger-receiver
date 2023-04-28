@@ -1,7 +1,7 @@
 """Main widgets for the gui of the application."""
 from typing import Callable
 
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QPushButton,
@@ -95,8 +95,13 @@ class TopMenuWidget(QWidget):
         if self.selected_serial is None:
             # We probably refresh to find a new connection,
             #   so try to connect to it
-            self.find_and_select_serial_port(self.SCAN_PATTERN)
-            print('Found serial port automatically!')
+            if self.find_and_select_serial_port(self.SCAN_PATTERN):
+                print('Found serial port automatically!')
+            else:
+                print(
+                    'Serial not automatically found. Selecting first available'
+                )
+                self.select_port(0)
 
     def select_port(self, idx) -> bool:
         """Return true if a selection is made."""

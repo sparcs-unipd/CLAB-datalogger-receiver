@@ -1,6 +1,6 @@
 from typing import Callable, Type
 
-from PyQt6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 
 class BoxButtonsWidget(QWidget):

@@ -7,8 +7,9 @@ Author:
 """
 
 from queue import Queue
+
 try:
-    from typing import Self
+    from typing import Self  # type: ignore
 except ImportError:
     from typing_extensions import Self
 
@@ -62,6 +63,7 @@ class ManualPortTurtlebotSerialConnector:
 
     serial: Serial
     queue: Queue[TimedPacketBase]
+    transport: TurtlebotReaderThread
     __thread: TurtlebotReaderThread
     __protocol: TurtlebotThreadedConnection
     __transport: TurtlebotReaderThread
@@ -99,6 +101,7 @@ class ManualPortTurtlebotSerialConnector:
         self._start()
         self.__transport, self.__protocol = self.__thread.connect()
         self.__protocol.signal_start_communication()
+        self.transport = self.__transport
 
     def close(self):
         """Close the connection to the STM32 serial port."""
@@ -127,6 +130,7 @@ class TurtlebotSerialConnector(ManualPortTurtlebotSerialConnector):
         super().__init__(
             rx_packet_spec,
             serial=get_serial(self.port, baudrate),
+            existing_queue=None,
         )
 
 

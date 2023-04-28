@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import struct
+import sys
 from dataclasses import dataclass
 from typing import Dict, List, Type
 
@@ -179,7 +180,11 @@ class PlottingStruct:
         file_exists = os.path.isfile(filename)
 
         if not file_exists:
-            with open(resource_path(template_file_path), 'rb') as t_file:
+            subpath = os.path.dirname(sys.argv[0])
+
+            with open(
+                resource_path(template_file_path, subpath), 'rb'
+            ) as t_file:
                 with open(filename, 'wb') as w_file:
                     w_file.write(t_file.read())
             print('File created from template')

@@ -8,15 +8,17 @@ Author:
 from __future__ import annotations
 
 import os
-import time
+from time import time
 from abc import abstractmethod
 from dataclasses import dataclass
 from queue import Empty as q_Empty
 from queue import Queue
 from typing import Callable
 
-import pyqtgraph as pg
-from PyQt6 import QtGui, QtWidgets
+from pyqtgraph import mkQApp, GraphicsLayoutWidget
+
+from PySide6.QtGui import QPen, QIcon
+from PySide6.QtWidgets import QApplication
 from pyqtgraph import GraphicsLayout, PlotDataItem, PlotItem, PlotWidget
 
 from .animator import Animator
@@ -118,9 +120,9 @@ class QTGraphicsWrapper(GraphicWrapperBase):
     window: GraphicsLayout
     axes: list[PlotItem]
     curves: list[list[PlotDataItem]]
-    app: QtWidgets.QApplication
+    app: QApplication
 
-    pens: list[QtGui.QPen] = get_graphs_pens()
+    pens: list[QPen] = get_graphs_pens()
     legend_backgrou_brush = get_background_brush()
 
     time_window: float
@@ -190,12 +192,12 @@ class QTGraphicsWrapper(GraphicWrapperBase):
 
     def open_window(self):
         """Opens Qt window."""
-        self.app = pg.mkQApp('CLAB datalogger receiver')
+        self.app = mkQApp('CLAB datalogger receiver')
         img_path = os.path.abspath(os.path.dirname(__file__))
         img_path += '/icons/SPARCS_logo_v2_nobackground.png'
-        self.app.setWindowIcon(QtGui.QIcon(img_path))
+        self.app.setWindowIcon(QIcon(img_path))
 
-        self.window = pg.GraphicsLayoutWidget()
+        self.window = GraphicsLayoutWidget()
 
         self.create_subplots(self.data_struct)
         self.window.closeEvent = self.close_callback
@@ -254,7 +256,7 @@ class ClabDataLoggerReceiver:
 
         self.max_time = max_time
 
-        self.t_0 = time.time()
+        self.t_0 = time()
 
         self.init_data_vectors()
 
@@ -349,7 +351,7 @@ class ClabDataLoggerReceiver:
 
     def currtime(self) -> float:
         """Return time elapsed since initialization."""
-        return time.time() - self.t_0
+        return time() - self.t_0
 
     def init_data_vectors(self) -> None:
         """Initialize `self.y_data_vector` according to `self.data_struct`."""

@@ -1,37 +1,36 @@
 from __future__ import annotations
 
 import os
-
 from queue import Queue
 from typing import Callable, Tuple
 
-import pyqtgraph as pg
+from pyqtgraph import GraphicsLayoutWidget as pg_GraphicsLayoutWidget
 import qdarktheme
-from PyQt6 import QtGui
-from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
-from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
+from numpy import array as np_array
+from numpy import concatenate as np_concatenate
+from numpy import ndarray as np_ndarray
+
+from PySide6.QtCore import QObject, QThread
+from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Slot as pyqtSlot
+from PySide6.QtGui import QIcon, QPen
+from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 from serial import Serial
 from serial.tools.list_ports_common import ListPortInfo
 
+from .base.common import resource_path
 from .gui.base_widgets import BoxButtonsWidget
 from .gui.colors import get_background_brush, get_graphs_pens
 from .received_structure import PlottingStruct
+from .saver import save_data_raw
 from .serial_communication.communication import (
     ManualPortTurtlebotSerialConnector,
 )
 from .serial_communication.packets import TimedPacketBase
 from .simple_console_main_classes import (
-    # qt_animate_frame,
-    # qt_animate_frame_with_ref,
     SubplotsReferences,
 )
 from .widgets import TopMenuWidget
-from .base.common import resource_path
-
-import numpy as np
-
-
-from .saver import save_data_raw
 
 
 class DequeueWorker(QObject):
@@ -59,10 +58,8 @@ class DequeueWorker(QObject):
         # debugpy.debug_this_thread()
 
         while self.working:
-            # while True:
             new = False
             data = []
-            # print('thread loop')
             while not self.rx_queue.empty():
                 data.append(self.rx_queue.get(block=False))
                 new = True
@@ -198,7 +195,7 @@ class DequeueAndPlotterWorker(QObject):
             #     # ]
         for y_i, yy in enumerate(y):
             for y_ii, yyy in enumerate(yy):
-                y[y_i][y_ii] = np.array(yyy)
+                y[y_i][y_ii] = np_array(yyy)
 
         return x, y
 
@@ -212,7 +209,7 @@ class MainWindow(QMainWindow):
 
     selected_port: ListPortInfo | None = None
 
-    pens: list[QtGui.QPen] = get_graphs_pens()
+    pens: list[QPen] = get_graphs_pens()
 
     legend_background_brush = get_background_brush()
 
@@ -267,15 +264,15 @@ class MainWindow(QMainWindow):
         # Start the dequeuing thread.
         self.rx_thread.start()
 
-    x_data: np.ndarray
-    y_data: list[list[np.ndarray]]
+    x_data: np_ndarray
+    y_data: list[list[np_ndarray]]
 
-    def append_data(self, x_new: np.ndarray, y_new: list[list[np.ndarray]]):
-        self.x_data = np.concatenate((self.x_data, x_new))
+    def append_data(self, x_new: np_ndarray, y_new: list[list[np_ndarray]]):
+        self.x_data = np_concatenate((self.x_data, x_new))
 
         for y_i, (y_s, y_n) in enumerate(zip(self.y_data, y_new)):
             for y_ii, (y_s_i, y_n_i) in enumerate(zip(y_s, y_n)):
-                self.y_data[y_i][y_ii] = np.concatenate((y_s_i, y_n_i))
+                self.y_data[y_i][y_ii] = np_concatenate((y_s_i, y_n_i))
 
         self.update_axis()
 
@@ -286,14 +283,14 @@ class MainWindow(QMainWindow):
             self.do_cache()
 
     def do_cache(self):
-        self.x_data_vectors = np.concatenate(
+        self.x_data_vectors = np_concatenate(
             (self.x_data_vectors, self.x_data[: self.min_plot_points])
         )
         self.x_data = self.x_data[-self.min_plot_points :]
 
         for y_i, y_s in enumerate(self.y_data):
             for y_ii, y_s_i in enumerate(y_s):
-                self.y_data_vectors[y_i][y_ii] = np.concatenate(
+                self.y_data_vectors[y_i][y_ii] = np_concatenate(
                     (
                         self.y_data_vectors[y_i][y_ii],
                         y_s_i[: self.min_plot_points],
@@ -305,19 +302,19 @@ class MainWindow(QMainWindow):
 
     def init_data_cache(self) -> None:
         """Initialize `self.y_data_vector` according to `self.data_struct`."""
-        self.x_data_vectors = np.array([])
+        self.x_data_vectors = np_array([])
 
         self.y_data_vectors = [
-            [np.array([]) for _ in range(len(sp))]
+            [np_array([]) for _ in range(len(sp))]
             for sp in self.data_struct.subplots
         ]
 
     def init_data_vectors(self) -> None:
         """Initialize `self.y_data_vector` according to `self.data_struct`."""
-        self.x_data = np.array([])
+        self.x_data = np_array([])
 
         self.y_data = [
-            [np.array([]) for _ in range(len(sp))]
+            [np_array([]) for _ in range(len(sp))]
             for sp in self.data_struct.subplots
         ]
 
@@ -356,10 +353,10 @@ class MainWindow(QMainWindow):
         print(img_path)
         qdarktheme.setup_theme()
 
-        self.setWindowIcon(QtGui.QIcon(img_path))
+        self.setWindowIcon(QIcon(img_path))
         self.setWindowTitle("SPARCS datalogger receiver")
 
-        self.graph_widget = pg.GraphicsLayoutWidget()
+        self.graph_widget = pg_GraphicsLayoutWidget()
 
         layout = QVBoxLayout()
         self.main_layout = layout

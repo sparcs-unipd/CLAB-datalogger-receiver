@@ -9,7 +9,7 @@ Author:
 
 """
 
-from PyQt6.QtGui import QPen, QBrush
+from PySide6.QtGui import QPen, QBrush
 
 from pyqtgraph import mkPen, mkBrush
 

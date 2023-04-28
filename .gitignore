@@ -138,6 +138,3 @@ dmypy.json
 
 # vscode settings
 .vscode/settings.json
-
-# Do not ignore the app build spec.
-!clab_datalogger_receiver_app.spec
