@@ -13,5 +13,6 @@ python -m nuitka ^
     --product-name=clab_datalogger_receiver ^
     --file-version=0.2.3 ^
     --product-version=0.2.3 ^
+    --assume-yes-for-downloads ^ @REM For files needed for compilation
     %* ^
     .\clab_datalogger_receiver_app.py
