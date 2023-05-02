@@ -108,7 +108,8 @@ class TurtlebotThreadedConnection(SerialThreadedRecvTx):
         self,
         packet_spec: PlottingStruct,
         rx_queue: Queue,
-        packet_type: Type[TimedPacketBase] = TimedPacket
+        packet_type: Type[TimedPacketBase] = TimedPacket,
+        t_0: float | datetime | None = None
         # packet_type: Type[Packet] = DateTimedPacket
     ) -> None:
         """Init the class to communicate with the turtlebot."""
@@ -122,7 +123,7 @@ class TurtlebotThreadedConnection(SerialThreadedRecvTx):
 
         # if isinstance(packet_type, TimedPacketBase):
         # self.t0 = packet_type.get_time()
-        self.t_0 = None
+        self.t_0 = t_0
 
     def signal_start_communication(self):
         """Instruct the STM to start sendind data."""

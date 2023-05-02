@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import os
 from queue import Queue
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Type
+
+from datetime import datetime
+import qdarktheme
 
 from pyqtgraph import GraphicsLayoutWidget as pg_GraphicsLayoutWidget
-import qdarktheme
+
 from numpy import array as np_array
 from numpy import concatenate as np_concatenate
 from numpy import ndarray as np_ndarray
@@ -66,8 +69,6 @@ class DequeueWorker(QObject):
             if new:
                 self.got_new_packages.emit(data)
 
-            # self.loopdone.emit()
-
         self.finished.emit()
 
     # def loop(self):
@@ -95,9 +96,6 @@ class DequeueAndPlotterWorker(QObject):
 
     loopdone = pyqtSignal()
     finished = pyqtSignal()
-
-    # x_data_vector: list
-    # y_data_vector: list
 
     subplots_ref: SubplotsReferences
     data_struct: PlottingStruct
@@ -176,10 +174,6 @@ class DequeueAndPlotterWorker(QObject):
     ) -> Tuple[list, list[list]]:
         x = [p.time for p in packages]
 
-        # y = []
-        # for p in packages:
-        #     y.append([p_d for p_d in p.data])
-
         y = [[[] for _ in range(len(sp))] for sp in self.data_struct.subplots]
 
         num_subplots: int = len(self.data_struct)
@@ -189,13 +183,9 @@ class DequeueAndPlotterWorker(QObject):
                 for i, data_aa in enumerate(package.data[ax_i]):
                     y[ax_i][i].append(data_aa)
 
-            # for subplot_idx in range(num_subplots):
-            #     # y[subplot_idx][i] = [
-            #     #     data_aa for data_aa in package.data[subplot_idx]
-            #     # ]
         for y_i, yy in enumerate(y):
             for y_ii, yyy in enumerate(yy):
-                y[y_i][y_ii] = np_array(yyy)
+                y[y_i][y_ii] = np_array(yyy)  # type: ignore
 
         return x, y
 
@@ -217,8 +207,7 @@ class MainWindow(QMainWindow):
     rx_thread: QThread
 
     subplots_reference: SubplotsReferences
-
-    serial_connection = ManualPortTurtlebotSerialConnector
+    serial_connection: ManualPortTurtlebotSerialConnector | None
 
     def __init__(
         self,
@@ -242,7 +231,9 @@ class MainWindow(QMainWindow):
 
         self.create_window()
         self.create_subplots()
-        self.rx_queue = Queue()
+
+        # Put a size to the queue, so
+        self.rx_queue = Queue(maxsize=100)
 
         self.rx_thread = QThread()
 
@@ -263,6 +254,13 @@ class MainWindow(QMainWindow):
 
         # Start the dequeuing thread.
         self.rx_thread.start()
+
+    def closeEvent(self, event):
+        # Stop the worker and the thread
+        self.rx_worker.working = False
+        self.rx_thread.exit()
+
+        super().closeEvent(event)
 
     x_data: np_ndarray
     y_data: list[list[np_ndarray]]
@@ -331,14 +329,57 @@ class MainWindow(QMainWindow):
                 max(self.time_window, self.x_data[-1]),
             )
 
+    # t_0: float | datetime | None = None
+    t_interruption: float | datetime | None = None
+    p_type: Type[TimedPacketBase] | None = None
+
+    def get_time_after_reconnection(self):
+        if self.t_interruption is None:
+            return None
+
+        # assert self.p_type is not None
+
+        # res = self.p_type.from_data(None).get_time()
+        res = self.t_interruption
+        # print('t_after_reconnection: ', res)
+        return res
+
+    def calc_interruption_time(self):
+        """
+        Return the time of the interruption of the connection.
+
+        The return type depends on the the packet time type
+        """
+
+        assert self.serial_connection is not None
+
+        t_0 = self.serial_connection.get_t_0()
+
+        return t_0
+
     def connect(self, connection: Serial):
-        # self.connected.emit()
-        self.serial_conn = ManualPortTurtlebotSerialConnector(
+        """Connects to the serial port."""
+
+        self.serial_connection = ManualPortTurtlebotSerialConnector(
             self.data_struct,
             serial=connection,
             existing_queue=self.rx_queue,
+            t_0=self.get_time_after_reconnection(),
         )
-        self.serial_conn.connect()
+
+        self.serial_connection.connect()
+
+    def disconnect(self):
+        """Close the serial connection."""
+        assert self.serial_connection is not None
+        print('Disconnecting.')
+
+        self.t_interruption = self.calc_interruption_time()
+        self.serial_connection.close()
+
+        self.serial_connection = None
+
+        return True
 
     def create_window(self):
         """Opens Qt window."""
@@ -360,12 +401,15 @@ class MainWindow(QMainWindow):
 
         layout = QVBoxLayout()
         self.main_layout = layout
+
         layout.addWidget(
             TopMenuWidget(
                 on_select_fcn=self.sel_changed,
                 on_connect_fcn=self.port_selected,
+                disconnection_requested=self.disconnect,
             )
         )
+
         layout.addWidget(self.graph_widget)
         layout.addWidget(
             BoxButtonsWidget(

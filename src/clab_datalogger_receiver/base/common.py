@@ -14,24 +14,29 @@ import os
 is_nuitka = "__compiled__" in globals()
 
 
-def resource_path_nuitka(relativePath: str, subfolder: str = '') -> str:
+def resource_path_nuitka(relative_path: str, subfolder: str = '') -> str:
+    """
+    Returns the path of a file relative to the script.
+    If the program is built with nuitka, then returns the same file into \
+        the .exe
+    """
     # This will find a file *near* your onefile.exe
     # path = os.path.join(os.path.dirname(sys.argv[0]), relativePath)
     # This will find a file *inside* your onefile.exe
     # path = os.path.join(os.path.dirname(__file__), relativePath)
 
-    print('is_nuitka: ', is_nuitka)
+    # print('is_nuitka: ', is_nuitka)
 
     if is_nuitka:
         path = os.path.join(
-            os.path.dirname(__file__), os.path.pardir, relativePath
+            os.path.dirname(__file__), os.path.pardir, relative_path
         )
     else:
-        path = os.path.join(subfolder, relativePath)
+        path = os.path.join(subfolder, relative_path)
 
-    print('path:', path)
+    # print('path:', path)
     if os.path.exists(path):
-        print('returning path')
+        # print('returning path')
         return path
     return path
 

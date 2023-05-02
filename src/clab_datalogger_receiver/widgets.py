@@ -18,6 +18,8 @@ from .serial_communication._utils import (
 )
 from .serial_communication.communication import get_serial
 
+from qdarktheme import load_stylesheet
+
 
 class TopMenuWidget(QWidget):
     """
@@ -30,22 +32,31 @@ class TopMenuWidget(QWidget):
     on_select: Callable[[ListPortInfo], None]
     on_connect: Callable[[Serial], None]
 
+    disconnection_requested: Callable[[], bool]
+
     combo_w: QComboBox
     available_ports: list[ListPortInfo]
 
     selected_serial: ListPortInfo | None = None
+    connected_serial: Serial | None = None
+    is_connected: bool = False
 
     SCAN_PATTERN = 'STMicroelectronics'
+
+    connect_btn: QPushButton
+    refresh_btn: QPushButton
 
     def __init__(
         self,
         on_select_fcn: Callable[[ListPortInfo], None],
         on_connect_fcn: Callable[[Serial], None],
+        disconnection_requested: Callable[[], bool],
     ) -> None:
         super().__init__()
 
         self.on_select = on_select_fcn
         self.on_connect = on_connect_fcn
+        self.disconnection_requested = disconnection_requested
 
         layout = QHBoxLayout()
 
@@ -58,13 +69,17 @@ class TopMenuWidget(QWidget):
         btn = QPushButton('Refresh list')
         btn.clicked.connect(self.refresh_opts)
         layout.addWidget(btn, 1)
+        self.refresh_btn = btn
         btn = QPushButton('Connect')
         btn.clicked.connect(self.try_connection)
         layout.addWidget(btn, 1)
+        self.connect_btn = btn
 
         self.refresh_opts()
 
         self.setLayout(layout)
+
+        self.original_stylesheet = load_stylesheet()
 
     def find_and_select_serial_port(self, pattern):
         """Finds a serial port and selects it if it matches the pattern."""
@@ -113,6 +128,38 @@ class TopMenuWidget(QWidget):
 
         return True
 
+    def connected(self, serial_connection: Serial):
+        self.connect_btn.setText('Disconnect')
+        # self.connect_btn.setText('Connected')
+        # self.connect_btn.setDisabled(True)
+        self.connect_btn.setStyleSheet(
+            "QPushButton { background-color: #4CAF50; color: #333 }"
+        )
+
+        self.is_connected = True
+
+        self.on_connect(serial_connection)
+        self.connect_btn.clicked.disconnect(self.try_connection)
+        self.connect_btn.clicked.connect(self.try_disconnection)
+
+    def try_disconnection(self):
+        """Try disconnecting from the serial port."""
+        if self.disconnection_requested():
+            self.disconnected()
+
+    def disconnected(self):
+        """Gets called when succesfully disconnected from serial."""
+        self.connect_btn.setText('Connect')
+        # self.connect_btn.setDisabled(True)
+
+        # self.connect_btn.setPalette(self.original_palette)
+        self.connect_btn.setStyleSheet(self.original_stylesheet)
+
+        self.is_connected = False
+
+        self.connect_btn.clicked.connect(self.try_connection)
+        self.connect_btn.clicked.disconnect(self.try_disconnection)
+
     def try_connection(self):
         """
         Try connecting to the selected serial port.
@@ -123,7 +170,8 @@ class TopMenuWidget(QWidget):
         assert self.selected_serial is not None
         try:
             serial_connection = get_serial(self.selected_serial.device)
-            self.on_connect(serial_connection)
+            self.connected(serial_connection)
+
         except SerialException:
             print('Error connecting!')
 

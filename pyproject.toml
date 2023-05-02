@@ -33,6 +33,14 @@ repository = "https://github.com/sparcs-unipd/CLAB-datalogger-receiver"
 line-length = 80
 skip-string-normalization = 1
 
+[tool.pylint.messages_control]
+extension-pkg-whitelist="PySide6"
+# ignore = "E203"
+
+# Not supported :(
+# [tool.flake8]
+# ignore = ['E203']
+
 [tool.bumpver]
 current_version = "0.2.2"
 version_pattern = "MAJOR.MINOR.PATCH"

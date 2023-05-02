@@ -1,6 +1,7 @@
 
 python -m nuitka ^
     --onefile ^
+    --disable-console ^
     --include-package=clab_datalogger_receiver ^
     --include-data-dir=src/clab_datalogger_receiver/templates=clab_datalogger_receiver/templates ^
     --include-data-dir=src/clab_datalogger_receiver/icons=clab_datalogger_receiver/icons ^
