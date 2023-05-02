@@ -69,6 +69,8 @@ class DequeueWorker(QObject):
             if new:
                 self.got_new_packages.emit(data)
 
+            QApplication.processEvents()
+
         self.finished.emit()
 
     # def loop(self):
@@ -89,7 +91,6 @@ class DequeueAndPlotterWorker(QObject):
     update_axis = pyqtSignal(tuple)
     got_new_packages = pyqtSignal(object)
     got_new_data = pyqtSignal(object, object)
-    update_ui = pyqtSignal()
 
     rx_queue: Queue[TimedPacketBase]
     working: bool
@@ -117,8 +118,6 @@ class DequeueAndPlotterWorker(QObject):
         self.init_data()
         self.working = True
         self.time_window = time_window
-        # self.got_new_packages
-        # self.started.emit()
 
     @pyqtSlot()
     def run(self):
@@ -133,29 +132,13 @@ class DequeueAndPlotterWorker(QObject):
                 packages.append(self.rx_queue.get(block=False))
                 new = True
 
+            QApplication.processEvents()
             if not new:
-                self.update_ui.emit()
                 continue
-
-            # self.got_new_packages.emit(packages)
 
             x_new, y_new = self.get_data_from_packages(packages)
 
             self.got_new_data.emit(x_new, y_new)
-
-            # self.update_axis.emit()
-
-            # for package in packages:
-            #     self.x_data_vector.append(package.time)
-            #     for ax_i in range(len(self.data_struct)):
-            #         for i, data_aa in enumerate(package.data[ax_i]):
-            #             self.y_data_vector[ax_i][i].append(data_aa)
-
-            # x_data = self.x_data_vector
-            # for ax_i, axis in enumerate(self.subplots_ref.axes):
-            #     y_data = self.y_data_vector[ax_i]
-            #     curve = self.subplots_ref.curves[ax_i]
-            #     self.update_axis.emit((curve, x_data, y_data, axis))
 
     def init_data(self) -> None:
         """Initialize `self.y_data_vector` according to `self.data_struct`."""
@@ -232,7 +215,8 @@ class MainWindow(QMainWindow):
         self.create_window()
         self.create_subplots()
 
-        # Put a size to the queue, so
+        # Put a size to the queue, so an error is risen if the dequeuing
+        #   is not fast enough
         self.rx_queue = Queue(maxsize=100)
 
         self.rx_thread = QThread()
@@ -241,7 +225,7 @@ class MainWindow(QMainWindow):
             self.rx_queue, self.subplots_reference
         )
 
-        self.rx_thread.setObjectName('test thread')
+        self.rx_thread.setObjectName('Dequeuer thread')
 
         self.rx_thread.started.connect(self.rx_worker.run)
         self.rx_worker.finished.connect(self.rx_thread.quit)
