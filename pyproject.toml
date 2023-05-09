@@ -39,7 +39,7 @@ extension-pkg-whitelist="PySide6"
 
 # Not supported :(
 # [tool.flake8]
-# ignore = ['E203']
+# ignore = ['E203','W503']
 
 [tool.bumpver]
 current_version = "0.2.4"

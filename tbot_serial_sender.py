@@ -61,7 +61,7 @@ def get_random_data(
         dat_vals = []
         for f_i, field in enumerate(subplots.fields):
             val = get_random_single_data(field.data_type)
-            val = val * 0.6 + seed[s_i][f_i]
+            val = val * 0.9 + seed[s_i][f_i]
             if f_i == idx_sin:
                 val *= sin(time())
             dat[field.name] = val

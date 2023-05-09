@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import os
+import sys
+
 from queue import Queue
-from typing import Callable, Tuple, Type
+from typing import Any, Callable, Type
 
 from datetime import datetime
 import qdarktheme
@@ -13,9 +15,8 @@ from numpy import array as np_array
 from numpy import concatenate as np_concatenate
 from numpy import ndarray as np_ndarray
 
-from PySide6.QtCore import QObject, QThread
+from PySide6.QtCore import QThread
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtCore import Slot as pyqtSlot
 from PySide6.QtGui import QIcon, QPen
 from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 from serial import Serial
@@ -35,142 +36,7 @@ from .simple_console_main_classes import (
 )
 from .widgets import TopMenuWidget
 
-
-class DequeueWorker(QObject):
-    got_new_packages = pyqtSignal(object)
-
-    rx_queue: Queue[TimedPacketBase]
-    working: bool
-
-    loopdone = pyqtSignal()
-    finished = pyqtSignal()
-
-    def __init__(self, rx_queue: Queue[TimedPacketBase]):
-        super().__init__()
-
-        self.rx_queue = rx_queue
-        self.working = True
-        # self.got_new_packages
-        # self.started.emit()
-
-    @pyqtSlot()
-    def run(self):
-        '''
-        Initialise the runner function with passed args, kwargs.
-        '''
-        # debugpy.debug_this_thread()
-
-        while self.working:
-            new = False
-            data = []
-            while not self.rx_queue.empty():
-                data.append(self.rx_queue.get(block=False))
-                new = True
-            if new:
-                self.got_new_packages.emit(data)
-
-            QApplication.processEvents()
-
-        self.finished.emit()
-
-    # def loop(self):
-    #     self.manage_packet()
-
-    # def append_data(self, packet: TimedPacketBase):
-    #     """Appends the new packet to the data"""
-
-    #     self.x_data_vector.append(packet.time)
-
-    #     for ax_i in range(len(self.data_struct)):
-    #         for i, data_aa in enumerate(packet.data[ax_i]):
-    #             self.y_data_vector[ax_i][i].append(data_aa)
-
-
-class DequeueAndPlotterWorker(QObject):
-    # update_axis = pyqtSignal(tuple[PlotDataItem, dict, PlotItem])
-    update_axis = pyqtSignal(tuple)
-    got_new_packages = pyqtSignal(object)
-    got_new_data = pyqtSignal(object, object)
-
-    rx_queue: Queue[TimedPacketBase]
-    working: bool
-
-    loopdone = pyqtSignal()
-    finished = pyqtSignal()
-
-    subplots_ref: SubplotsReferences
-    data_struct: PlottingStruct
-
-    time_window: float
-
-    def __init__(
-        self,
-        rx_queue: Queue[TimedPacketBase],
-        subplots_ref: SubplotsReferences,
-        time_window: float = 10,
-    ):
-        super().__init__()
-
-        self.rx_queue = rx_queue
-        self.data_struct = subplots_ref.data_struct
-        self.subplots_ref = subplots_ref
-
-        self.init_data()
-        self.working = True
-        self.time_window = time_window
-
-    @pyqtSlot()
-    def run(self):
-        '''
-        Initialise the runner function with passed args, kwargs.
-        '''
-        while self.working:
-            new = False
-            packages = []
-
-            while not self.rx_queue.empty():
-                packages.append(self.rx_queue.get(block=False))
-                new = True
-
-            QApplication.processEvents()
-            if not new:
-                continue
-
-            x_new, y_new = self.get_data_from_packages(packages)
-
-            self.got_new_data.emit(x_new, y_new)
-
-    def init_data(self) -> None:
-        """Initialize `self.y_data_vector` according to `self.data_struct`."""
-
-        assert self.data_struct, (
-            'self.data_struct must be assigned ' ' before initializing data'
-        )
-
-        self.x_data_vector = []
-        self.y_data_vector = [
-            [[] for _ in range(len(sp))] for sp in self.data_struct.subplots
-        ]
-
-    def get_data_from_packages(
-        self, packages: list[TimedPacketBase]
-    ) -> Tuple[list, list[list]]:
-        x = [p.time for p in packages]
-
-        y = [[[] for _ in range(len(sp))] for sp in self.data_struct.subplots]
-
-        num_subplots: int = len(self.data_struct)
-
-        for package in packages:
-            for ax_i in range(num_subplots):
-                for i, data_aa in enumerate(package.data[ax_i]):
-                    y[ax_i][i].append(data_aa)
-
-        for y_i, yy in enumerate(y):
-            for y_ii, yyy in enumerate(yy):
-                y[y_i][y_ii] = np_array(yyy)  # type: ignore
-
-        return x, y
+from .workers import DequeueAndPlotterWorker
 
 
 class MainWindow(QMainWindow):
@@ -191,6 +57,21 @@ class MainWindow(QMainWindow):
 
     subplots_reference: SubplotsReferences
     serial_connection: ManualPortTurtlebotSerialConnector | None
+
+    # Vectors containing the data seen in the plots
+    x_data: np_ndarray
+    y_data: list[list[np_ndarray]]
+    # y_data: list[list[Any]]
+
+    # Vectors used to cache the entire data, later saved in the .mat file
+    x_data_vectors: np_ndarray
+    y_data_vectors: list[list[np_ndarray]]
+    # y_data_vectors: list[list[Any]]
+
+    # Time of connection interruption
+    t_interruption: float | datetime | None = None
+    # Package type
+    p_type: Type[TimedPacketBase] | None = None
 
     def __init__(
         self,
@@ -246,10 +127,9 @@ class MainWindow(QMainWindow):
 
         super().closeEvent(event)
 
-    x_data: np_ndarray
-    y_data: list[list[np_ndarray]]
+    def append_data(self, x_new: np_ndarray, y_new: list[list[Any]]):
+        """Append the new received data to the arrays displayed in the GUI."""
 
-    def append_data(self, x_new: np_ndarray, y_new: list[list[np_ndarray]]):
         self.x_data = np_concatenate((self.x_data, x_new))
 
         for y_i, (y_s, y_n) in enumerate(zip(self.y_data, y_new)):
@@ -261,10 +141,18 @@ class MainWindow(QMainWindow):
         self.do_cache_if_needed()
 
     def do_cache_if_needed(self):
+        """Cache the data vectors if needed."""
+
         if self.x_data.size > self.max_plot_points:
             self.do_cache()
 
     def do_cache(self):
+        """
+        Takes part of the current data vectors and saved them.
+
+        Moreover, removes that part from those vectors, to keep them small.
+        """
+
         self.x_data_vectors = np_concatenate(
             (self.x_data_vectors, self.x_data[: self.min_plot_points])
         )
@@ -312,10 +200,6 @@ class MainWindow(QMainWindow):
                 max(0, self.x_data[-1] - self.time_window),
                 max(self.time_window, self.x_data[-1]),
             )
-
-    # t_0: float | datetime | None = None
-    t_interruption: float | datetime | None = None
-    p_type: Type[TimedPacketBase] | None = None
 
     def get_time_after_reconnection(self):
         if self.t_interruption is None:
@@ -472,8 +356,13 @@ class MainWindow(QMainWindow):
 def get_app_and_window(
     data_struct,
     time_window=10,
-    sys_argv=[],
+    sys_argv=None,
 ):
+    """Create the main Qt application and main window."""
+
+    if sys_argv is None:
+        sys_argv = sys.argv
+
     app = QApplication(sys_argv)
     window = MainWindow(data_struct, time_window, app)
 
