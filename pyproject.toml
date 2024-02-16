@@ -31,7 +31,7 @@ repository = "https://github.com/sparcs-unipd/CLAB-datalogger-receiver"
 [tool.black]
 # line-length = 88
 line-length = 80
-skip-string-normalization = 1
+skip-string-normalization = true
 
 [tool.pylint.messages_control]
 extension-pkg-whitelist="PySide6"

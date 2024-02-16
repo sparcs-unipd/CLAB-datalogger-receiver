@@ -48,7 +48,7 @@ And finally, to check the information of the package
 pip show clab-datalogger-receiver 
 ```
 
-## Optional dependencies ( for development )
+## Optional dependencies (for development)
 
 To install optional dependency it is possible to run
 

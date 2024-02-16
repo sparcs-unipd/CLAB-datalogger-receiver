@@ -12,6 +12,7 @@ from serial.tools.list_ports import comports
 
 
 def get_serial_port_text(port_info: ListPortInfo) -> str:
+    """Returns the string representing a port."""
     return f'{port_info.device} [{port_info.description}]'
 
 

@@ -7,21 +7,20 @@ Author:
 """
 
 import sys
+from math import sin
 from random import random
 from struct import pack as struct_pack
 from time import time
 
 from cobs import cobs
 
-from serial import Serial
+from serial import Serial, SerialTimeoutException
 
 from clab_datalogger_receiver.received_structure import PlottingStruct
 from clab_datalogger_receiver.serial_communication._utils import (
     get_serial,
     get_serial_port_from_console_if_needed,
 )
-
-from math import sin
 
 
 def get_random_single_data(datatype: str):
@@ -103,9 +102,9 @@ def main():
     )
     serial = get_serial(port)
 
-    serial.write_timeout = 5
+    serial.write_timeout = 10
 
-    PPS = 200
+    pacakges_per_second = 200
 
     do_exit = False
 
@@ -121,11 +120,13 @@ def main():
     t_prev = time()
     while not do_exit:
         try:
-            if time() >= (t_prev + 1 / PPS):
+            if time() >= (t_prev + 1 / pacakges_per_second):
                 # print('sending')
                 send_package(serial, data_struct, rand_seed)
                 t_prev = time()
-
+        except SerialTimeoutException:
+            print("Serial timeout, Closing connection.")
+            do_exit = True
         except KeyboardInterrupt:
             do_exit = True
 
