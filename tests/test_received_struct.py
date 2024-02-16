@@ -49,13 +49,29 @@ def test_from_yaml_single():
     t = PlottingStruct(
         [
             DataStruct(
-                name=None,
-                fields=[StructField(name='accel_data', data_type='f')],
+                name='accel_data',
+                fields=[
+                    StructField(name='a_x', data_type='f'),
+                    StructField(name='a_y', data_type='f'),
+                    StructField(name='a_z', data_type='f'),
+                    StructField(name='a', data_type='f'),
+                    StructField(name='b', data_type='f'),
+                ],
             )
         ]
     )
 
     t2 = PlottingStruct.from_yaml_file('tests/test_struct_cfg_single.yaml')
 
+    print(t.subplots[0])
     print(t2.subplots[0])
+    print(t.struct_format_string)
     print(t2.struct_format_string)
+    assert all(
+        a.name == b.name
+        and all(
+            aa.name == bb.name and aa.data_type == bb.data_type
+            for (aa, bb) in zip(a.fields, b.fields)
+        )
+        for (a, b) in zip(t.subplots, t2.subplots)
+    )
