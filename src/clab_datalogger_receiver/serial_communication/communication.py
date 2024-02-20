@@ -8,6 +8,8 @@ Author:
 
 from queue import Queue
 
+from clab_datalogger_receiver.udp_communication.types import UDPData
+
 try:
     from typing import Self  # type: ignore
 except ImportError:
@@ -72,7 +74,7 @@ class TurtlebotReaderThread(ReaderThread):
 
 
 class ManualPortTurtlebotSerialConnector:
-    """Class representing the turtlebot asinc serial communication."""
+    """Class representing the turtlebot async serial communication."""
 
     serial: Serial
     queue: Queue[TimedPacketBase]
@@ -114,15 +116,6 @@ class ManualPortTurtlebotSerialConnector:
         """Return the type of timed packet used in the thread."""
         return self.__thread.packet_type
 
-    # def get_t_0(self):
-    #     """
-    #     Return the t_0 at which the data has been instantiated.
-
-    #     Used for future reconnections
-    #     """
-
-    #     return self.t_0
-
     def _start(self):
         """Start the underlying thread."""
         self.__thread.start()
@@ -155,7 +148,7 @@ class ManualPortTurtlebotSerialConnector:
 
 
 class TurtlebotSerialConnector(ManualPortTurtlebotSerialConnector):
-    """Class representing the turtlebot asinc serial communication."""
+    """Class representing the turtlebot async serial communication."""
 
     def __init__(
         self,

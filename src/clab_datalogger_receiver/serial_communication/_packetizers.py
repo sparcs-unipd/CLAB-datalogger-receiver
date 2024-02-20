@@ -61,7 +61,7 @@ class SerialThreadedRecv(Packetizer):
 
         Override this to manage the packet after it has been validated.
         """
-        raise NotImplementedError
+        raise AssertionError("This method should be overridden!")
 
 
 class SerialThreadedRecvTx(SerialThreadedRecv):

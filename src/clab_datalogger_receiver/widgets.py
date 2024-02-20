@@ -1,15 +1,21 @@
 """Main widgets for the gui of the application."""
+from socket import socket, AF_INET, SOCK_DGRAM
+from os import error
+# import socket
 from typing import Callable
 
 from PySide6.QtWidgets import (
     QComboBox,
+    QInputDialog,
     QHBoxLayout,
     QPushButton,
     QWidget,
 )
-
+from qdarktheme import load_stylesheet
 from serial import Serial, SerialException
 from serial.tools.list_ports_common import ListPortInfo
+
+from clab_datalogger_receiver.udp_communication.types import UDPData
 
 from .serial_communication._utils import (
     get_serial_port_list,
@@ -17,8 +23,6 @@ from .serial_communication._utils import (
     select_serial_port_index,
 )
 from .serial_communication.communication import get_serial
-
-from qdarktheme import load_stylesheet
 
 
 class TopMenuWidget(QWidget):
@@ -38,12 +42,12 @@ class TopMenuWidget(QWidget):
     available_ports: list[ListPortInfo]
 
     selected_serial: ListPortInfo | None = None
-    connected_serial: Serial | None = None
+    connected_serial: UDPData | Serial | None = None
     is_connected: bool = False
 
     SCAN_PATTERN = 'STMicroelectronics'
 
-    connect_btn: QPushButton
+    connect_serial_btn: QPushButton
     refresh_btn: QPushButton
 
     def __init__(
@@ -66,14 +70,21 @@ class TopMenuWidget(QWidget):
         self.combo_w.activated.connect(self.selection_changed)
 
         layout.addWidget(self.combo_w, 3)
+
         btn = QPushButton('Refresh list')
         btn.clicked.connect(self.refresh_opts)
         layout.addWidget(btn, 1)
         self.refresh_btn = btn
-        btn = QPushButton('Connect')
-        btn.clicked.connect(self.try_connection)
+
+        btn = QPushButton('Serial Connect')
+        btn.clicked.connect(self.try_connection_serial)
         layout.addWidget(btn, 1)
-        self.connect_btn = btn
+        self.connect_serial_btn = btn
+
+        btn = QPushButton('Network Connect')
+        btn.clicked.connect(self.try_connection_network)
+        layout.addWidget(btn, 1)
+        self.connect_network_btn = btn
 
         self.refresh_opts()
 
@@ -116,7 +127,10 @@ class TopMenuWidget(QWidget):
                 print(
                     'Serial not automatically found. Selecting first available'
                 )
-                self.select_port(0)
+                if len(self.available_ports) == 0:
+                    error("No available serial ports")
+                else:
+                    self.select_port(0)
 
     def select_port(self, idx) -> bool:
         """Return true if a selection is made."""
@@ -128,39 +142,112 @@ class TopMenuWidget(QWidget):
 
         return True
 
-    def connected(self, serial_connection: Serial):
-        self.connect_btn.setText('Disconnect')
+    def connected(self, serial_connection: Serial | UDPData):
+
+        if isinstance(serial_connection, UDPData):
+            btn = self.connect_network_btn
+            btn2 = self.connect_serial_btn
+            btn.clicked.disconnect(self.try_connection_network)
+            btn.clicked.connect(self.try_disconnection)
+        else:
+            btn = self.connect_serial_btn
+            btn2 = self.connect_network_btn
+            btn.clicked.disconnect(self.try_connection_serial)
+            btn.clicked.connect(self.try_disconnection)
+
+        btn.setText('Disconnect')
         # self.connect_btn.setText('Connected')
-        # self.connect_btn.setDisabled(True)
-        self.connect_btn.setStyleSheet(
+        btn.setStyleSheet(
             "QPushButton { background-color: #4CAF50; color: #333 }"
         )
+        btn2.setDisabled(True)
+        # btn.setStyleSheet(
+        #     "QPushButton { background-color: #4CAF50; color: #333 }"
+        # )
 
         self.is_connected = True
 
         self.on_connect(serial_connection)
-        self.connect_btn.clicked.disconnect(self.try_connection)
-        self.connect_btn.clicked.connect(self.try_disconnection)
 
     def try_disconnection(self):
         """Try disconnecting from the serial port."""
         if self.disconnection_requested():
+            print('Disconnection is requested')
             self.disconnected()
 
     def disconnected(self):
         """Gets called when succesfully disconnected from serial."""
-        self.connect_btn.setText('Connect')
+
+        if isinstance(self.connected_serial, UDPData):
+            connect_btn = self.connect_network_btn
+            btn_text = 'Network Connect'
+            connect_event = self.try_connection_network
+        else:
+            connect_btn = self.connect_serial_btn
+            btn_text = 'Serial Connect'
+            connect_event = self.try_connection_serial
+
+        connect_btn.setText(btn_text)
         # self.connect_btn.setDisabled(True)
 
         # self.connect_btn.setPalette(self.original_palette)
-        self.connect_btn.setStyleSheet(self.original_stylesheet)
+        connect_btn.setStyleSheet(self.original_stylesheet)
 
         self.is_connected = False
 
-        self.connect_btn.clicked.connect(self.try_connection)
-        self.connect_btn.clicked.disconnect(self.try_disconnection)
+        connect_btn.clicked.connect(connect_event)
+        connect_btn.clicked.disconnect(self.try_disconnection)
 
-    def try_connection(self):
+    def try_connection_network(self):
+        """
+        Try connecting to the ip:port UDP socket.
+
+        Invoke callback if connection is succesful.
+        """
+
+        # assert self.connected is False
+
+        sock = socket(AF_INET, SOCK_DGRAM)
+
+        ok = False
+        numtries = 6
+        while not ok and numtries > 0:
+            numtries = numtries - 1
+            text, ok = QInputDialog.getText(
+                self, 'Insert Connection data', 'IP:port', text='localhost:42069'
+            )
+            if not ok or not text:
+                break
+
+            print(text)
+            splitted = text.split(':')
+
+            if len(splitted) != 2:
+                ok = False
+                continue
+
+            ip, port = splitted
+            try:
+                port = int(port)
+            except ValueError:
+                ok = False
+                continue
+
+            # TODO: verify that this fails if no connection is found
+            sock.connect((ip, port))
+
+            self.connected_socket = UDPData(sock, (ip, port))
+            ok = True
+
+        if self.connected_socket is not None:
+            if ok:
+                # Connection succeeded
+                self.connected(self.connected_socket)
+            else:
+                self.connected_socket.close()
+                self.connected_socket = None
+
+    def try_connection_serial(self):
         """
         Try connecting to the selected serial port.
 
