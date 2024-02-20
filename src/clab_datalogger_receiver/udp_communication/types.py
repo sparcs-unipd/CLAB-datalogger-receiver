@@ -2,8 +2,6 @@
 
 from socket import socket as socket_t, timeout
 
-from serial import Serial
-
 
 class Meta(type):
     def __call__(cls, *args, **kw):
@@ -11,7 +9,7 @@ class Meta(type):
         return cls.__new__(cls, *args, **kw)
 
 
-class UDPData(Serial):
+class UDPData:
     """
     Class used to make the UDP interface appear as a Serial interface.
 
@@ -24,7 +22,6 @@ class UDPData(Serial):
     _is_open: bool = False
 
     __metaclass__ = Meta
-    in_waiting: bool = False
 
     # Used for wrapping seria.Serial, used on _close()
     _overlapped_read = None
@@ -52,14 +49,14 @@ class UDPData(Serial):
 
     def close(self):
         print('Closing Socket')
-        self.socket.close()
         self.is_open = False
+        self.socket.close()
 
-    def cancel_read(self):
-        self.timeout = 0.1
-        self.is_open = True
-        # self.cancelled_read =
-        # pass
+    # def cancel_read(self):
+    #     self.timeout = 0.1
+    #     self.is_open = True
+    #     # self.cancelled_read =
+    #     # pass
 
     def read(self, size=0):
 
@@ -77,7 +74,9 @@ class UDPData(Serial):
                 blocking = False
             except timeout:
                 pass
-
+            except OSError as e:
+                print('error on udp read: ', e)
+                return None
         # print(f"received from {addr} : {data}")
         # print(f"received : {data}")
         return data
@@ -89,6 +88,15 @@ class UDPData(Serial):
     @timeout.setter
     def timeout(self, value: float):
         self.socket.settimeout(value)
+
+    @property
+    def in_waiting(self):
+        """
+        Used to emulate serial.in_waiting.
+
+        We do not know in UDP if we are awaiting data, so return 0.
+        """
+        return 0
 
     @property
     def is_open(self):

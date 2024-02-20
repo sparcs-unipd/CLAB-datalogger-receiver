@@ -28,7 +28,29 @@ from .packets import TimedPacket, TimedPacketBase
 from ..received_structure import PlottingStruct
 
 
-class TurtlebotReaderThread(ReaderThread):
+class UDPOrSerialReaderThread(ReaderThread):
+
+    serial: Serial | UDPData
+    # udp_data: UDPData
+
+    def __init__(self, connection: Serial | UDPData, protocol_factory) -> None:
+        # Ignore warning of connection not being only Serial.
+        super().__init__(connection, protocol_factory)  # type: ignore
+
+    def stop(self):
+        """Stops the reader thread."""
+        if isinstance(self.serial, Serial):
+            # Serial stop is implemented in base class
+            super().stop()
+            return
+
+        self.alive = False
+        self.serial.socket.shutdown(1)
+        self.serial.close()
+        self.join(2)
+
+
+class TurtlebotReaderThread(UDPOrSerialReaderThread):
     """Class to represent the thread responsible\
         of communicating with the STM."""
 
@@ -36,7 +58,7 @@ class TurtlebotReaderThread(ReaderThread):
 
     def __init__(
         self,
-        serial_instance: Serial,
+        connection_instance: Serial | UDPData,
         rx_packet_spec: PlottingStruct,
         rx_queue: Queue,
         t_0: float | datetime | None = None,
@@ -58,7 +80,7 @@ class TurtlebotReaderThread(ReaderThread):
                 t_0=t_0,
             )
 
-        super().__init__(serial_instance, __get_tbot_protocol)
+        super().__init__(connection_instance, __get_tbot_protocol)
 
     def connect(self) -> tuple[Self, TurtlebotThreadedConnection]:
         """
@@ -76,7 +98,7 @@ class TurtlebotReaderThread(ReaderThread):
 class ManualPortTurtlebotSerialConnector:
     """Class representing the turtlebot async serial communication."""
 
-    serial: Serial
+    connection: UDPData | Serial
     queue: Queue[TimedPacketBase]
     transport: TurtlebotReaderThread
     __thread: TurtlebotReaderThread
@@ -89,7 +111,7 @@ class ManualPortTurtlebotSerialConnector:
     def __init__(
         self,
         rx_packet_spec: PlottingStruct,
-        serial: Serial,
+        connection: UDPData | Serial,
         existing_queue: Queue | None,
         t_0: float | datetime | None = None,
     ) -> None:
@@ -102,12 +124,12 @@ class ManualPortTurtlebotSerialConnector:
 
         self.__packet_spec = rx_packet_spec
 
-        self.serial = serial
+        self.connection = connection
 
         self.t_0 = t_0
 
         self.__thread = TurtlebotReaderThread(
-            self.serial, self.__packet_spec, self.queue, t_0=self.t_0
+            self.connection, self.__packet_spec, self.queue, t_0=self.t_0
         )
 
         self.__thread.name = 'Serial comm Thread'
@@ -166,7 +188,7 @@ class TurtlebotSerialConnector(ManualPortTurtlebotSerialConnector):
 
         super().__init__(
             rx_packet_spec,
-            serial=get_serial(self.port, baudrate),
+            connection=get_serial(self.port, baudrate),
             existing_queue=None,
             t_0=t_0,
         )

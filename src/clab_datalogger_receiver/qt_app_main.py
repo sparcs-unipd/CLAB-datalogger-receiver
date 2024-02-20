@@ -22,6 +22,8 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 from serial import Serial
 from serial.tools.list_ports_common import ListPortInfo
 
+from clab_datalogger_receiver.udp_communication.types import UDPData
+
 from .base.common import resource_path
 from .gui.base_widgets import BoxButtonsWidget
 from .gui.colors import get_background_brush, get_graphs_pens
@@ -208,12 +210,12 @@ class MainWindow(QMainWindow):
 
         return t_0
 
-    def connect(self, connection: Serial):
+    def connect(self, connection: Serial | UDPData):
         """Connects to the serial port."""
 
         self.serial_connection = ManualPortTurtlebotSerialConnector(
             self.data_struct,
-            serial=connection,
+            connection=connection,
             existing_queue=self.rx_queue,
             t_0=self.get_time_after_reconnection(),
         )
@@ -322,9 +324,13 @@ class MainWindow(QMainWindow):
 
         # Else selection changed prev selected port.
 
-    def port_selected(self, serial_connection: Serial):
-        print('Connected to serial', serial_connection.port)
-        self.connect(serial_connection)
+    def port_selected(self, connection: Serial | UDPData):
+        if isinstance(connection, Serial):
+            print('Connected to serial', connection.port)
+        else:
+            print('Connected to UDP', (connection.ip, connection.port))
+
+        self.connect(connection)
 
     def save(self):
         self.do_cache()

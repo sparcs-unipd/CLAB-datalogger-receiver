@@ -34,7 +34,7 @@ class TopMenuWidget(QWidget):
     """
 
     on_select: Callable[[ListPortInfo], None]
-    on_connect: Callable[[Serial], None]
+    on_connect: Callable[[Serial | UDPData], None]
 
     disconnection_requested: Callable[[], bool]
 
@@ -53,7 +53,7 @@ class TopMenuWidget(QWidget):
     def __init__(
         self,
         on_select_fcn: Callable[[ListPortInfo], None],
-        on_connect_fcn: Callable[[Serial], None],
+        on_connect_fcn: Callable[[Serial | UDPData], None],
         disconnection_requested: Callable[[], bool],
     ) -> None:
         super().__init__()
@@ -236,16 +236,16 @@ class TopMenuWidget(QWidget):
             # TODO: verify that this fails if no connection is found
             sock.connect((ip, port))
 
-            self.connected_socket = UDPData(sock, (ip, port))
+            self.connected_serial = UDPData(sock, (ip, port))
             ok = True
 
-        if self.connected_socket is not None:
+        if self.connected_serial is not None:
             if ok:
                 # Connection succeeded
-                self.connected(self.connected_socket)
+                self.connected(self.connected_serial)
             else:
-                self.connected_socket.close()
-                self.connected_socket = None
+                self.connected_serial.close()
+                self.connected_serial = None
 
     def try_connection_serial(self):
         """
