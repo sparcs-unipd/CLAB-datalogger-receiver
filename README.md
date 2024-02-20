@@ -1,7 +1,8 @@
 # CLAB-datalogger-receiver
 This repo is a reimplementation of the MATLAB datalogger project in python.
 
-This is to prevent some errors occurring during the ERTC course due MATLAB's
+This is to prevent some errors occurring during the ERTC
+(Embedded Real-Time Control) course due MATLAB's
 serial interface that was not working properly,
 and also to increase code portability.
 
@@ -34,7 +35,7 @@ Notice that the package needs first to be installed.
 This can be done by running `install_package.bat`
 
 On launch, it will connect to the serial port,
-( asking whuch one, if multiple are available),
+(asking which one, if multiple are available),
 and send the `START_TRANSMISSION` token to the datalogger.
 
 It is possible to stop the data recording both by pressing `CTRL+C` or by closing the plot window.
