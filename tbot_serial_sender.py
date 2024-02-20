@@ -46,7 +46,7 @@ def get_random_seed(rx_data_struct: PlottingStruct) -> list[list[float]]:
     return ret
 
 
-idx_sin = 2
+IDX_SIN = 2
 
 
 def get_random_data(
@@ -61,7 +61,7 @@ def get_random_data(
         for f_i, field in enumerate(subplots.fields):
             val = get_random_single_data(field.data_type)
             val = val * 0.6 + seed[s_i][f_i]
-            if f_i == idx_sin:
+            if f_i == IDX_SIN:
                 val *= sin(time())
             dat[field.name] = val
             dat_vals.append(val)
