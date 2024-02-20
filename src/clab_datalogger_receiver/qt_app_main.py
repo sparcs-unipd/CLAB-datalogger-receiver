@@ -20,7 +20,13 @@ from numpy.typing import NDArray
 from PySide6.QtCore import QThread
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtGui import QIcon, QPen
-from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QVBoxLayout,
+    QWidget,
+    QMessageBox,
+)
 from serial import Serial
 from serial.tools.list_ports_common import ListPortInfo
 
@@ -61,6 +67,7 @@ class MainWindow(QMainWindow):
     subplots_reference: SubplotsReferences
     serial_connection: ManualPortTurtlebotSerialConnector | None
 
+    data_saved: bool = True
     x_data_vectors: NDArray
 
     def __init__(
@@ -121,6 +128,7 @@ class MainWindow(QMainWindow):
     y_data: list[list[np_ndarray]]
 
     def append_data(self, x_new: np_ndarray, y_new: list[list[np_ndarray]]):
+        self.data_saved = False
         self.x_data = np_concatenate((self.x_data, x_new))
 
         for y_i, (y_s, y_n) in enumerate(zip(self.y_data, y_new)):
@@ -335,6 +343,31 @@ class MainWindow(QMainWindow):
 
         self.connect(connection)
 
+    def close(self, force: bool = False):
+        if self.data_saved or force:
+            super().close()
+        else:
+            close_btn = QMessageBox.StandardButton.No
+            cancel_btn = QMessageBox.StandardButton.Cancel
+            save_btn = QMessageBox.StandardButton.Yes
+            warning_text = (
+                "You are about to exit without saving all the data.\n"
+                "Do you want to save before closing?"
+            )
+            ret = QMessageBox.warning(
+                self,
+                "Attention, you could lose data",
+                warning_text,
+                save_btn | cancel_btn | close_btn,
+                save_btn,
+            )
+
+            if ret == save_btn:
+                self.save()
+                self.close(True)
+            elif ret == close_btn:
+                self.close(True)
+
     def save(self):
         self.do_cache()
         # print('saving requested.')
@@ -343,6 +376,7 @@ class MainWindow(QMainWindow):
             self.x_data_vectors,
             self.y_data_vectors,
         )
+        self.data_saved = True
 
 
 def get_app_and_window(
