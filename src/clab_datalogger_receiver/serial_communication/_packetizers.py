@@ -94,6 +94,7 @@ class TurtlebotThreadedConnection(SerialThreadedRecvTx):
         the STM to start transmitting
     """
 
+    # TODO: set these in a config file somewhere, maybe
     SEND_DATA_TOKEN = b'\x41'
     STOP_DATA_TOKEN = b'\x42'
 

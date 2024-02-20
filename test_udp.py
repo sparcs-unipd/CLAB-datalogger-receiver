@@ -24,7 +24,7 @@ from serial import Serial
 from clab_datalogger_receiver.received_structure import PlottingStruct
 from clab_datalogger_receiver.udp_communication.types import UDPData
 
-
+# TODO: set these in a config file somewhere, maybe
 SEND_DATA_TOKEN = b'\x41'
 STOP_DATA_TOKEN = b'\x42'
 
