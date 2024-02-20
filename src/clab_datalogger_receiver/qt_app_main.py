@@ -1,3 +1,6 @@
+"""
+Module that manages the main application window.
+"""
 from __future__ import annotations
 
 import os
@@ -11,8 +14,7 @@ from pyqtgraph import (
     GraphicsLayoutWidget as pg_GraphicsLayoutWidget,
     PlotDataItem,
 )
-
-from numpy import min as np_min, max as np_max, array as np_array
+from numpy import array as np_array
 from numpy import concatenate as np_concatenate
 from numpy import ndarray as np_ndarray
 from numpy.typing import NDArray
@@ -49,6 +51,8 @@ from .workers import DequeueAndPlotterWorker
 
 
 class MainWindow(QMainWindow):
+    """Main Application window."""
+
     connected: pyqtSignal
 
     app: QApplication
@@ -128,6 +132,11 @@ class MainWindow(QMainWindow):
     y_data: list[list[np_ndarray]]
 
     def append_data(self, x_new: np_ndarray, y_new: list[list[np_ndarray]]):
+        """
+        Append new data to the plotted vectors.
+
+        Used when new data arrives from the communication channel.
+        """
         self.data_saved = False
         self.x_data = np_concatenate((self.x_data, x_new))
 
@@ -140,10 +149,16 @@ class MainWindow(QMainWindow):
         self.do_cache_if_needed()
 
     def do_cache_if_needed(self):
+        """Cache the plotted data, if needed."""
         if self.x_data.size > self.max_plot_points:
             self.do_cache()
 
     def do_cache(self):
+        """
+        Cache the plotted data to a larger vector.
+
+        Used to keep the plotted data smaller, thus lighter
+        """
         self.x_data_vectors = np_concatenate(
             (self.x_data_vectors, self.x_data[: self.min_plot_points])
         )
@@ -180,6 +195,7 @@ class MainWindow(QMainWindow):
         ]
 
     def update_axis(self):
+        """Update all the axis according to `self.x_data` and `self.y_data`."""
         axes = self.subplots_reference.axes
         curves = self.subplots_reference.curves
 
@@ -197,6 +213,11 @@ class MainWindow(QMainWindow):
     p_type: Type[TimedPacketBase] | None = None
 
     def get_time_after_reconnection(self):
+        """
+        Get the time after a reconnection occurs.
+
+        Used to keep data consistent after a reconnection.
+        """
         if self.t_interruption is None:
             return None
 
@@ -324,18 +345,23 @@ class MainWindow(QMainWindow):
         )
 
     def sel_changed(self, selected_port: ListPortInfo):
-        # print('sel changed in MainWindow')
         print(selected_port)
+        # TODO: Why was this function here?
 
-        if (
-            self.selected_port is not None
-            and self.selected_port.device == selected_port.device
-        ):
-            return
+        # if self.selected_port is not None and is_curr_device:
+        # is_curr_device = self.selected_port.device == selected_port.device
+        #     return
 
         # Else selection changed prev selected port.
 
     def port_selected(self, connection: Serial | UDPData):
+        """
+        Create the connection channel after the channel selection.
+
+        Depending on the connection channel, this happens when:
+        - serial.Serial: selecting the port and pressing "Serial Connect".
+        - UDPData : the IP:PORT is insertede and pressing "Network Connect".
+        """
         if isinstance(connection, Serial):
             print('Connected to serial', connection.port)
         else:
@@ -369,8 +395,8 @@ class MainWindow(QMainWindow):
                 self.close(True)
 
     def save(self):
+        """Save all the captured data to a `.mat` file."""
         self.do_cache()
-        # print('saving requested.')
         save_data_raw(
             self.data_struct,
             self.x_data_vectors,
@@ -382,9 +408,17 @@ class MainWindow(QMainWindow):
 def get_app_and_window(
     data_struct,
     time_window=10,
-    sys_argv=[],
+    sys_argv=None,
 ):
-    app = QApplication(sys_argv)
+    """
+    Create the QApplication and QMainWindow for the application.
+
+    Called when invoking the module's __main__ script.
+    """
+    if sys_argv:
+        app = QApplication(sys_argv)
+    else:
+        app = QApplication()
     window = MainWindow(data_struct, time_window, app)
 
     return app, window

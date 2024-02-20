@@ -1,7 +1,6 @@
 """Main widgets for the gui of the application."""
 from socket import socket, AF_INET, SOCK_DGRAM
 from os import error
-# import socket
 from typing import Callable
 
 from PySide6.QtWidgets import (
@@ -143,6 +142,14 @@ class TopMenuWidget(QWidget):
         return True
 
     def connected(self, serial_connection: Serial | UDPData):
+        """
+        Set button styles and call the callback when connection happens.
+
+        Changes properties of the button corresponding to the connection type,
+         and disables the other.
+        Also calls self.on_connect after this.
+
+        """
 
         if isinstance(serial_connection, UDPData):
             btn = self.connect_network_btn
@@ -156,15 +163,10 @@ class TopMenuWidget(QWidget):
             btn.clicked.connect(self.try_disconnection)
 
         btn.setText('Disconnect')
-        # self.connect_btn.setText('Connected')
         btn.setStyleSheet(
             "QPushButton { background-color: #4CAF50; color: #333 }"
         )
         btn2.setDisabled(True)
-        # btn.setStyleSheet(
-        #     "QPushButton { background-color: #4CAF50; color: #333 }"
-        # )
-
         self.is_connected = True
 
         self.on_connect(serial_connection)
@@ -214,7 +216,10 @@ class TopMenuWidget(QWidget):
         while not ok and numtries > 0:
             numtries = numtries - 1
             text, ok = QInputDialog.getText(
-                self, 'Insert Connection data', 'IP:port', text='localhost:42069'
+                self,
+                'Insert Connection data',
+                'IP:port',
+                text='localhost:42069',
             )
             if not ok or not text:
                 break
@@ -232,8 +237,8 @@ class TopMenuWidget(QWidget):
             except ValueError:
                 ok = False
                 continue
-
-            # TODO: verify that this fails if no connection is found
+            # This does not fail if the connection is not found,
+            #   but the sock.read() will, and that is managed.
             sock.connect((ip, port))
 
             self.connected_serial = UDPData(sock, (ip, port))
