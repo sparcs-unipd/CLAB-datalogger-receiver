@@ -7,22 +7,23 @@ from typing import Callable, Type
 from datetime import datetime
 import qdarktheme
 
-from pyqtgraph import GraphicsLayoutWidget as pg_GraphicsLayoutWidget
+from pyqtgraph import (
+    GraphicsLayoutWidget as pg_GraphicsLayoutWidget,
+    PlotDataItem,
+)
 
-from numpy import array as np_array
+from numpy import min as np_min, max as np_max, array as np_array
 from numpy import concatenate as np_concatenate
 from numpy import ndarray as np_ndarray
 from numpy.typing import NDArray
 
 from PySide6.QtCore import QThread
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtCore import Slot as pyqtSlot
 from PySide6.QtGui import QIcon, QPen
 from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 from serial import Serial
 from serial.tools.list_ports_common import ListPortInfo
 
-from clab_datalogger_receiver.udp_communication.types import UDPData
 
 from .base.common import resource_path
 from .gui.base_widgets import BoxButtonsWidget
@@ -36,6 +37,7 @@ from .serial_communication.packets import TimedPacketBase
 from .simple_console_main_classes import (
     SubplotsReferences,
 )
+from .udp_communication.types import UDPData
 from .widgets import TopMenuWidget
 from .workers import DequeueAndPlotterWorker
 
@@ -281,8 +283,9 @@ class MainWindow(QMainWindow):
         rx_data_format = self.data_struct
         axes = []
         datas = []
+
         for i, dat_format in enumerate(rx_data_format.subplots):
-            axis = self.graph_widget.addPlot(
+            axis: PlotDataItem = self.graph_widget.addPlot(
                 row=i,
                 col=0,
                 title=dat_format.name,
@@ -294,7 +297,7 @@ class MainWindow(QMainWindow):
             axis.setMouseEnabled(x=False, y=False)
             axis.enableAutoRange(x=False, y=True)
             axis.setXRange(0, self.time_window)
-            # axis
+            axis.setDownsampling(True)
             axis.addLegend(
                 offset=(-10, 10),
                 brush=self.legend_background_brush,
