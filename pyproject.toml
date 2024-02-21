@@ -1,6 +1,6 @@
 [project]
 name = "clab-datalogger-receiver"
-version = "0.2.3"
+version = "0.2.5"
 description = "A porting of another MATLAB implementation of the same data receiver and plotter."
 license = {file='LICENSE'}
 authors = [ 
@@ -39,10 +39,10 @@ extension-pkg-whitelist = "PySide6"
 
 # Not supported :(
 # [tool.flake8]
-# ignore = ['E203']
+# ignore = ['E203','W503']
 
 [tool.bumpver]
-current_version = "0.2.3"
+current_version = "0.2.5"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message  = "Bump version {old_version} -> {new_version}"
 commit          = true

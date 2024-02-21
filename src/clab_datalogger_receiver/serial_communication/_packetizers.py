@@ -46,7 +46,13 @@ class SerialThreadedRecv(Packetizer):
 
     def handle_packet(self, packet: bytes) -> None:
         """Call `handle_valid_data` after validating the received bytes."""
-        valid, data = self._validate_package(packet)
+
+        try:
+            valid, data = self._validate_package(packet)
+        except ValueError as err:
+            valid = False
+            print(err)
+            return
 
         if not valid:
             return

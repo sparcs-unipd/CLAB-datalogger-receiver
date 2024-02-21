@@ -4,6 +4,8 @@ Module that manages the main application window.
 from __future__ import annotations
 
 import os
+import sys
+
 from queue import Queue
 from typing import Callable, Type
 
@@ -72,7 +74,20 @@ class MainWindow(QMainWindow):
     serial_connection: ManualPortTurtlebotSerialConnector | None
 
     data_saved: bool = True
-    x_data_vectors: NDArray
+    # Vectors containing the data seen in the plots
+    x_data: np_ndarray
+    y_data: list[list[np_ndarray]]
+    # y_data: list[list[Any]]
+
+    # Vectors used to cache the entire data, later saved in the .mat file
+    x_data_vectors: np_ndarray
+    y_data_vectors: list[list[np_ndarray]]
+    # y_data_vectors: list[list[Any]]
+
+    # Time of connection interruption
+    t_interruption: float | datetime | None = None
+    # Package type
+    p_type: Type[TimedPacketBase] | None = None
 
     def __init__(
         self,
@@ -128,9 +143,6 @@ class MainWindow(QMainWindow):
 
         super().closeEvent(event)
 
-    x_data: np_ndarray
-    y_data: list[list[np_ndarray]]
-
     def append_data(self, x_new: np_ndarray, y_new: list[list[np_ndarray]]):
         """
         Append new data to the plotted vectors.
@@ -149,7 +161,8 @@ class MainWindow(QMainWindow):
         self.do_cache_if_needed()
 
     def do_cache_if_needed(self):
-        """Cache the plotted data, if needed."""
+        """Cache the data vectors, if needed."""
+
         if self.x_data.size > self.max_plot_points:
             self.do_cache()
 
@@ -207,10 +220,6 @@ class MainWindow(QMainWindow):
                 max(0, self.x_data[-1] - self.time_window),
                 max(self.time_window, self.x_data[-1]),
             )
-
-    # t_0: float | datetime | None = None
-    t_interruption: float | datetime | None = None
-    p_type: Type[TimedPacketBase] | None = None
 
     def get_time_after_reconnection(self):
         """
