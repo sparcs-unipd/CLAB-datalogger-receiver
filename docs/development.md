@@ -10,9 +10,9 @@ To set up the dev environment it is advised to use venvs.
 
 ```console
 # Windows
-py -m venv env
+py -m venv venv
 # Linux
-python -m venv env
+python -m venv venv
 
 ```
 
@@ -20,9 +20,9 @@ python -m venv env
 
 ```console
 # Windows
-.\env\Scripts\activate
+.\venv\Scripts\activate
 # Linux
-source env/bin/activate
+source venv/bin/activate
 ```
 ### Stop
 
@@ -35,7 +35,7 @@ deactivate
 In order to install the package for local development it is sufficient to run
 
 ```console
-pip install -e .
+pip install -e .[dev]
 ```
 
 where the `-e` flag stands for `--editable`,
@@ -50,7 +50,7 @@ pip show clab-datalogger-receiver
 
 ## Optional dependencies (for development)
 
-To install optional dependency it is possible to run
+To install optional dependencies it is possible to run
 
 ```console
 pip install clab-datalogger-receiver[dev]
@@ -65,7 +65,7 @@ pip-compile pyproject.toml
 ## Upgrading version
 
 To update the version, `bumpver` is used 
-(it is installed with the dev dependencies).
+(installed with the dev dependencies).
 
 ```console
 # 0.1.0 -> 1.0.0
@@ -78,7 +78,18 @@ bumpver update --patch
 
 ## Building
 
-#### MISSING BUILD COMMANDS
+### Build commands
+
+The program build into an executable, happens via [Nuitka](https://nuitka.net/).
+
+To build the application, a convenience script is provided under `./scripts/build.bat`.
+Every argument passed to that script is provided to Nuitka,
+together with the others in the script
+
+
+### Build test
+
+#### **NOT WORKING RIGHT NOW, NEEDS MAINTENANCE** 
 
 The following command tests the files after their build
 
@@ -94,24 +105,54 @@ twine upload -r testpypi dist/*
 
 ## Testing
 
+### Serial Data
+
 To test the program it is possible to use the script `tbot_serial_sender.py`,
 after having installed a program (like [com0com](https://com0com.sourceforge.net/)) that creates a virtual COM port.
 
 In particular:
 
 - In one terminal:
-```console
+```bash
 # Start the serial receiver
-python tbot_serial.py
+python -m clab_datalogger_receiver
 # Select one serial port
+#  (If a port matching the name `STMicrocontroller` is found, 
+#    it should be automatically selected)
+# Press `Serial Connect`
 ```
 
 - Then, in another
-```console
+```bash
 # Start the serial sender
 python tbot_serial_sender.py
 # Select another serial port
 ```
 
 - From now on, random data should start to populate the plots of `tbot_serial.py`.
+
+### UDP Data
+
+To test the UDP Protocol part, another script is provided to send the data,
+namely `test_udp.py`.
+
+
+In particular:
+
+
+- In one terminal:
+```bash
+# Start the serial sender
+python test_udp.py
+```
+
+- Then, in another, launch the main application
+```bash
+# Start the serial receiver
+python -m clab_datalogger_receiver
+# Select one serial port
+# Press `Network Connect`
+```
+
+- This should start the data stream using the UDP socket connection
 

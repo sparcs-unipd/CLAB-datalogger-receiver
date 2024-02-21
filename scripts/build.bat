@@ -8,7 +8,7 @@ python -m nuitka ^
     --plugin-enable=pyside6 ^
     --nofollow-import-to=tkinter ^
     --output-dir=dist ^
-    --onefile-tempdir-spec="%%CACHE_DIR%%/%%COMPANY%%/%%PRODUCT%%/%%VERSION%%" ^
+    --onefile-tempdir-spec="{CACHE_DIR}/{COMPANY}/{PRODUCT}/{VERSION}" ^
     --company-name=sparcs-unipd ^
     --product-name=clab_datalogger_receiver ^
     --file-version=0.2.3 ^
