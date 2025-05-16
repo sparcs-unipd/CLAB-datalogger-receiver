@@ -14,6 +14,8 @@ from .simple_console_main_classes import (
     SubplotsReferences,
 )
 
+import time
+
 
 class DequeueWorker(QObject):
     got_new_packages = pyqtSignal(object)
@@ -107,12 +109,23 @@ class DequeueAndPlotterWorker(QObject):
             new = False
             packages = []
 
-            while not self.rx_queue.empty():
-                packages.append(self.rx_queue.get(block=False))
+            try:
+                # Block for a short time to wait for new data
+                package = self.rx_queue.get(block=True, timeout=0.1)
+                packages.append(package)
                 new = True
 
+                # Drain the rest of the queue
+                while not self.rx_queue.empty():
+                    packages.append(self.rx_queue.get(block=False))
+            except Exception:
+                pass  # Timeout occurred, no data available
+
             QApplication.processEvents()
+
             if not new:
+                # Introduce a small sleep to avoid busy-waiting
+                time.sleep(0.01)
                 continue
 
             x_new, y_new = self.get_data_from_packages(packages)
