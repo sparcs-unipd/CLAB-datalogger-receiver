@@ -52,6 +52,8 @@ from .udp_communication.types import UDPData
 from .widgets import TopMenuWidget
 from .workers import DequeueAndPlotterWorker
 
+from .struct_editor import StructConfigEditor
+
 
 class MainWindow(QMainWindow):
     """Main Application window."""
@@ -216,11 +218,14 @@ class MainWindow(QMainWindow):
         for ax_i, axis in enumerate(axes):
             for l_i, curve_i in enumerate(curves[ax_i]):
                 curve_i.setData(x=self.x_data, y=self.y_data[ax_i][l_i])
-
-            axis.setXRange(
-                max(0, self.x_data[-1] - self.time_window),
-                max(self.time_window, self.x_data[-1]),
-            )
+            if len(self.x_data) == 0:
+                # If no data, set the x range to 0
+                axis.setXRange(0, self.time_window)
+            else:
+                axis.setXRange(
+                    max(0, self.x_data[-1] - self.time_window),
+                    max(self.time_window, self.x_data[-1]),
+                )
 
     def get_time_after_reconnection(self):
         """
@@ -307,7 +312,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.graph_widget)
         layout.addWidget(
             BoxButtonsWidget(
-                names=['Save', 'Exit'], fcns=[self.save, self.close]
+                names=['Edit Config', 'Save', 'Exit'], fcns=[self.open_struct_editor, self.save, self.close]
             )
         )
 
@@ -490,6 +495,29 @@ class MainWindow(QMainWindow):
             # User cancelled the dialog
             print("Save operation cancelled by user.")
             # self.data_saved status remains unchanged from before save attempt
+
+
+    def open_struct_editor(self):
+        yaml_path = "struct_cfg.yaml"  # FIXME: Make this configurable or use a default path
+        dlg = StructConfigEditor(yaml_path, self)
+        dlg.yaml_saved.connect(self.on_struct_yaml_saved)  # Connect signal
+        dlg.exec()
+
+
+    def on_struct_yaml_saved(self):
+        # Reload YAML and update UI
+        self.data_struct = PlottingStruct.from_yaml_file("struct_cfg.yaml")
+        self.init_data_cache()
+        self.init_data_vectors()
+
+        # Explicitly clear existing plots from the graphics layout
+        if hasattr(self, 'graph_widget') and self.graph_widget is not None:
+            self.graph_widget.clear()
+            # self.subplots_reference will be updated by create_subplots
+
+        self.create_subplots()  # Re-creates plots and updates self.subplots_reference
+        self.update_axis()
+        self.rx_worker.update_plot_structs(self.subplots_reference)
 
 
 def get_app_and_window(
