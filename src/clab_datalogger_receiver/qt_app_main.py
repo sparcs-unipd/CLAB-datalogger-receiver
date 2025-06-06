@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QMessageBox,
+    QFileDialog,
 )
 from serial import Serial
 from serial.tools.list_ports_common import ListPortInfo
@@ -39,7 +40,7 @@ from .base.common import resource_path
 from .gui.base_widgets import BoxButtonsWidget
 from .gui.colors import get_background_brush, get_graphs_pens
 from .received_structure import PlottingStruct
-from .saver import save_data_raw
+from .saver import save_as_mat, save_as_pandas_dataframe
 from .serial_communication.communication import (
     ManualPortTurtlebotSerialConnector,
 )
@@ -406,12 +407,89 @@ class MainWindow(QMainWindow):
     def save(self):
         """Save all the captured data to a `.mat` file."""
         self.do_cache()
-        save_data_raw(
-            self.data_struct,
-            self.x_data_vectors,
-            self.y_data_vectors,
-        )
-        self.data_saved = True
+
+        if self.x_data_vectors.size == 0:
+            QMessageBox.information(self, "No Data", "There is no data to save.")
+            return
+        
+        file_dialog = QFileDialog(self)
+        file_dialog.setAcceptMode(QFileDialog.AcceptSave)
+        file_dialog.setWindowTitle("Save Data")
+        
+        # Suggest initial directory (User's Documents or Home folder)
+        docs_dir = os.path.join(os.path.expanduser("~"), "Documents")
+        default_save_dir = docs_dir if os.path.isdir(docs_dir) else os.path.expanduser("~")
+        file_dialog.setDirectory(default_save_dir)
+        
+        default_filename = f"sparcs_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        file_dialog.selectFile(default_filename) 
+
+        filters = [
+            "MAT files (*.mat)",
+            "CSV files (*.csv)",
+            "Pandas Parquet files (*.parquet)",
+            "Pandas Pickle files (*.pkl)",
+        ]
+        file_dialog.setNameFilters(filters)
+        #file_dialog.setDefaultSuffix("mat") # Default for typing name without extension
+
+        if file_dialog.exec():
+            selected_file_path = file_dialog.selectedFiles()[0]
+            selected_filter = file_dialog.selectedNameFilter()
+            
+            try:
+                print(f"Saving data to {selected_file_path} with filter {selected_filter}")
+                if "MAT files" in selected_filter:
+                    selected_file_path += ".mat" if not selected_file_path.endswith(".mat") else ""
+                    save_as_mat(
+                        self.data_struct,
+                        self.x_data_vectors,
+                        self.y_data_vectors,
+                        mat_filename=selected_file_path,
+                    )
+                elif "CSV files" in selected_filter:
+                    selected_file_path += ".csv" if not selected_file_path.endswith(".csv") else ""
+                    save_as_pandas_dataframe(
+                        self.data_struct,
+                        self.x_data_vectors,
+                        self.y_data_vectors,
+                        filepath=selected_file_path,
+                        file_format='csv'
+                    )
+                elif "Pandas Parquet files" in selected_filter:
+                    selected_file_path += ".parquet" if not selected_file_path.endswith(".parquet") else ""
+                    save_as_pandas_dataframe(
+                        self.data_struct,
+                        self.x_data_vectors,
+                        self.y_data_vectors,
+                        filepath=selected_file_path,
+                        file_format='parquet'
+                    )
+                elif "Pandas Pickle files" in selected_filter:
+                    selected_file_path += ".pkl" if not selected_file_path.endswith(".pkl") else ""
+                    save_as_pandas_dataframe(
+                        self.data_struct,
+                        self.x_data_vectors,
+                        self.y_data_vectors,
+                        filepath=selected_file_path,
+                        file_format='pickle'
+                    )
+                else: # Should not happen with defined filters
+                    QMessageBox.warning(self, "Unknown Filter", "Selected file type filter is not recognized.")
+                    self.data_saved = False 
+                    return
+
+                self.data_saved = True
+                QMessageBox.information(self, "Success", f"Data saved to {selected_file_path}")
+
+            except Exception as e:
+                self.data_saved = False 
+                QMessageBox.critical(self, "Error Saving File", 
+                                     f"Could not save file '{selected_file_path}':\n{type(e).__name__}: {e}")
+        else:
+            # User cancelled the dialog
+            print("Save operation cancelled by user.")
+            # self.data_saved status remains unchanged from before save attempt
 
 
 def get_app_and_window(
