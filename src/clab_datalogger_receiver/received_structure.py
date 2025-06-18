@@ -246,6 +246,19 @@ class PlottingStruct:
         """Get the total byte size of the child structs."""
         return sum(s.struct_byte_size for s in self.subplots)
 
+    def __str__(self) -> str:
+        """Return a string representation of the plotting structure."""
+        result = "PlottingStruct with:\n"
+        for i, subplot in enumerate(self.subplots):
+            result += f"  Subplot {i}"
+            if subplot.name:
+                result += f" ('{subplot.name}')"
+            result += ":\n"
+            for j, field in enumerate(subplot.fields):
+                field_name = field.name if field.name else f"field_{j}"
+                result += f"    {field_name}: {field.data_type}\n"
+        return result
+
 
 # -----------------------------------------------------------------------------
 # Tests

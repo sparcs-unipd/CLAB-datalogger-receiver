@@ -64,16 +64,17 @@ def get_serial_port_from_console_if_needed(
 
     p_s: int | None = 0  # Select first by default
 
-    st_port_not_found = True
+    autoscan_port_found = False
 
     if autoscan_port and len(available_ports) > 1:
         p_s = select_serial_port_index(available_ports, autoscan_port_pattern)
-        st_port_not_found = p_s is None
+        autoscan_port_found = p_s is not None
 
-    if st_port_not_found:
-        print('Automatic port found!')
+    if autoscan_port_found:
+        assert p_s is not None
+        print(f'Automatic port found! ({available_ports[p_s]})')
 
-    if len(available_ports) > 1 and st_port_not_found:
+    if len(available_ports) > 1 and not autoscan_port_found:
         print('Available serial ports:')
         print(
             '\n'.join(

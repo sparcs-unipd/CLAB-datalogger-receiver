@@ -4,7 +4,6 @@ Module that manages the main application window.
 from __future__ import annotations
 
 import os
-import sys
 
 from queue import Queue
 from typing import Callable, Type
@@ -14,12 +13,12 @@ import qdarktheme
 
 from pyqtgraph import (
     GraphicsLayoutWidget as pg_GraphicsLayoutWidget,
-    PlotDataItem,
+    PlotItem,
+    ViewBox,
 )
 from numpy import array as np_array
 from numpy import concatenate as np_concatenate
 from numpy import ndarray as np_ndarray
-from numpy.typing import NDArray
 
 from PySide6.QtCore import QThread
 from PySide6.QtCore import Signal as pyqtSignal
@@ -30,6 +29,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QMessageBox,
+    QFileDialog,
 )
 from serial import Serial
 from serial.tools.list_ports_common import ListPortInfo
@@ -39,7 +39,7 @@ from .base.common import resource_path
 from .gui.base_widgets import BoxButtonsWidget
 from .gui.colors import get_background_brush, get_graphs_pens
 from .received_structure import PlottingStruct
-from .saver import save_data_raw
+from .saver import save_as_mat, save_as_pandas_dataframe
 from .serial_communication.communication import (
     ManualPortTurtlebotSerialConnector,
 )
@@ -50,6 +50,8 @@ from .simple_console_main_classes import (
 from .udp_communication.types import UDPData
 from .widgets import TopMenuWidget
 from .workers import DequeueAndPlotterWorker
+
+from .struct_editor import StructConfigEditor
 
 
 class MainWindow(QMainWindow):
@@ -215,11 +217,14 @@ class MainWindow(QMainWindow):
         for ax_i, axis in enumerate(axes):
             for l_i, curve_i in enumerate(curves[ax_i]):
                 curve_i.setData(x=self.x_data, y=self.y_data[ax_i][l_i])
-
-            axis.setXRange(
-                max(0, self.x_data[-1] - self.time_window),
-                max(self.time_window, self.x_data[-1]),
-            )
+            if len(self.x_data) == 0:
+                # If no data, set the x range to 0
+                axis.setXRange(0, self.time_window)
+            else:
+                axis.setXRange(
+                    max(0, self.x_data[-1] - self.time_window),
+                    max(self.time_window, self.x_data[-1]),
+                )
 
     def get_time_after_reconnection(self):
         """
@@ -306,7 +311,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.graph_widget)
         layout.addWidget(
             BoxButtonsWidget(
-                names=['Save', 'Exit'], fcns=[self.save, self.close]
+                names=['Edit Config', 'Save', 'Exit'],
+                fcns=[self.open_struct_editor, self.save, self.close]
             )
         )
 
@@ -323,7 +329,7 @@ class MainWindow(QMainWindow):
         datas = []
 
         for i, dat_format in enumerate(rx_data_format.subplots):
-            axis: PlotDataItem = self.graph_widget.addPlot(
+            axis: PlotItem = self.graph_widget.addPlot(
                 row=i,
                 col=0,
                 title=dat_format.name,
@@ -332,10 +338,12 @@ class MainWindow(QMainWindow):
 
             axis.showGrid(True)
             # axis.enableAutoRange(x=False, y=True)
-            axis.setMouseEnabled(x=False, y=False)
-            axis.enableAutoRange(x=False, y=True)
-            axis.setXRange(0, self.time_window)
-            axis.setDownsampling(True)
+            vb = axis.getViewBox()
+            assert isinstance(vb, ViewBox)
+            vb.setMouseEnabled(x=False, y=False)
+            vb.enableAutoRange(x=False, y=True)
+            vb.setXRange(0, self.time_window)
+            axis.setDownsampling(True, auto=True)
             axis.addLegend(
                 offset=(-10, 10),
                 brush=self.legend_background_brush,
@@ -378,40 +386,162 @@ class MainWindow(QMainWindow):
 
         self.connect(connection)
 
-    def close(self, force: bool = False):
+    def close(self, force: bool = False) -> bool:
         if self.data_saved or force:
-            super().close()
-        else:
-            close_btn = QMessageBox.StandardButton.No
-            cancel_btn = QMessageBox.StandardButton.Cancel
-            save_btn = QMessageBox.StandardButton.Yes
-            warning_text = (
-                "You are about to exit without saving all the data.\n"
-                "Do you want to save before closing?"
-            )
-            ret = QMessageBox.warning(
-                self,
-                "Attention, you could lose data",
-                warning_text,
-                save_btn | cancel_btn | close_btn,
-                save_btn,
-            )
+            return super().close()
 
-            if ret == save_btn:
-                self.save()
-                self.close(True)
-            elif ret == close_btn:
-                self.close(True)
+        close_btn = QMessageBox.StandardButton.No
+        save_btn = QMessageBox.StandardButton.Yes
+        cancel_btn = QMessageBox.StandardButton.Cancel
+        warning_text = (
+            "You are about to exit without saving all the data.\n"
+            "Do you want to save before closing?"
+        )
+        ret = QMessageBox.warning(
+            self,
+            "Attention, you could lose data",
+            warning_text,
+            save_btn | cancel_btn | close_btn,
+            save_btn,
+        )
+
+        if ret == save_btn:
+            self.save()
+            return self.close(True)
+        if ret == close_btn:
+            return self.close(True)
+
+        return False
 
     def save(self):
-        """Save all the captured data to a `.mat` file."""
+        """Save all the captured data to a file."""
         self.do_cache()
-        save_data_raw(
-            self.data_struct,
-            self.x_data_vectors,
-            self.y_data_vectors,
+
+        if self.x_data_vectors.size == 0:
+            QMessageBox.information(
+                self, "No Data", "There is no data to save.")
+            return
+
+        file_dialog = QFileDialog(self)
+        file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        file_dialog.setWindowTitle("Save Data")
+
+        # Suggest initial directory (User's Documents or Home folder)
+        docs_dir = os.path.join(os.path.expanduser("~"), "Documents")
+        default_save_dir = docs_dir if os.path.isdir(
+            docs_dir) else os.path.expanduser("~")
+        file_dialog.setDirectory(default_save_dir)
+
+        default_filename = f"sparcs_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        file_dialog.selectFile(default_filename)
+
+        filters = [
+            # ( desc, extension, format)
+            ("MAT files", "mat", "mat"),
+            ("CSV files", "csv", "csv"),
+            ("Pandas Parquet files", "parquet", "parquet"),
+            ("Pandas Pickle files", "pkl", "pickle"),
+        ]
+
+        file_dialog.setNameFilters(
+            [f'{f[0]} (*.{f[1]})' for f in filters]
         )
-        self.data_saved = True
+
+        # file_dialog.setDefaultSuffix("mat") # Default for typing name without extension
+
+        if file_dialog.exec():
+            selected_file_path = file_dialog.selectedFiles()[0]
+            selected_filter = file_dialog.selectedNameFilter()
+
+            try:
+                print(
+                    f"Saving data to {selected_file_path} with filter {selected_filter}")
+
+                extension = selected_file_path.split('.')[-1]
+                assert extension in [
+                    f[1] for f in filters], f"Extension not supported (.{extension})"
+
+                format_found = False
+                for filter_desc, filter_ext, filter_format in filters:
+                    if filter_desc in selected_filter:
+                        format_found = True
+                        # Add extension if not already present
+                        if not selected_file_path.endswith(filter_ext):
+                            selected_file_path += f'.{filter_ext}'
+
+                        if filter_ext == 'mat':
+                            save_as_mat(
+                                self.data_struct,
+                                self.x_data_vectors,
+                                self.y_data_vectors,
+                                mat_filename=selected_file_path,
+                            )
+                        else:
+                            save_as_pandas_dataframe(
+                                self.data_struct,
+                                self.x_data_vectors,
+                                self.y_data_vectors,
+                                filepath=selected_file_path,
+                                file_format=filter_format
+                            )
+
+                if not format_found:  # Should not happen with defined filters
+                    QMessageBox.warning(
+                        self,
+                        "Unknown Filter",
+                        "Selected file type filter is not recognized."
+                    )
+                    self.data_saved = False
+                    return
+
+                self.data_saved = True
+                QMessageBox.information(
+                    self, "Success", f"Data saved to {selected_file_path}")
+            except ImportError as e:
+                self.data_saved = False
+                QMessageBox.critical(
+                    self, "Error Saving File",
+                    f"Could not save file '{selected_file_path}':\n{type(e).__name__}: {e}"
+                )
+            except Exception as e:
+                self.data_saved = False
+                message_text = (
+                    f"Could not save file '{selected_file_path}':<br><br>"
+                    + "<span style='color:orange; font-weight:bold;'>Please"
+                    + ' <a href="https://github.com/sparcs-unipd/CLAB-datalogger-receiver/issues/new/choose">file an issue</a>'
+                    + 'on github with this message!</span><br><br>'
+                    + f" {type(e).__name__}: {e}")
+
+                QMessageBox.critical(
+                    self,
+                    "Error Saving File with new exception",
+                    message_text
+                )
+        else:
+            # User cancelled the dialog
+            print("Save operation cancelled by user.")
+            # self.data_saved status remains unchanged from before save attempt
+
+    def open_struct_editor(self):
+        yaml_path = "struct_cfg.yaml"  # FIXME: Make this configurable or use a default path
+        dlg = StructConfigEditor(yaml_path, self)
+        dlg.yaml_saved.connect(self.on_struct_yaml_saved)  # Connect signal
+        dlg.exec()
+
+    def on_struct_yaml_saved(self):
+        # Reload YAML and update UI
+        self.data_struct = PlottingStruct.from_yaml_file("struct_cfg.yaml")
+        self.init_data_cache()
+        self.init_data_vectors()
+
+        # Explicitly clear existing plots from the graphics layout
+        if hasattr(self, 'graph_widget') and self.graph_widget is not None:
+            self.graph_widget.clear()
+            # self.subplots_reference will be updated by create_subplots
+
+        self.create_subplots()  # Re-creates plots and updates self.subplots_reference
+        self.update_axis()
+        self.rx_worker.update_plot_structs(self.subplots_reference)
 
 
 def get_app_and_window(

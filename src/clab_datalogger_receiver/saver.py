@@ -8,6 +8,8 @@ Author:
 
 import sys
 from scipy.io import savemat, loadmat
+import pandas as pd
+import numpy
 
 from .simple_console_main_classes import ClabDataLoggerReceiver
 
@@ -69,7 +71,7 @@ def save_data_clab_datalogger(
             raise RuntimeError('The saved file is corrupted')
 
 
-def save_data_raw(
+def save_as_mat(
     data_struct,
     x_data,
     y_data,
@@ -105,3 +107,48 @@ def save_data_raw(
             print('Data is ok')
         else:
             raise RuntimeError('The saved file is corrupted')
+        
+
+def prepare_dataframe_dict(data_struct, x_data, y_data) -> dict:
+    df_dict = {'time': x_data}
+    reference_length = len(x_data)
+
+    for i, subplot_struct in enumerate(data_struct.subplots):
+        subplot_prefix = subplot_struct.name.replace(" ", "_").replace("-", "_")
+        for j, field_struct in enumerate(subplot_struct.fields):
+            field_suffix = field_struct.name.replace(" ", "_").replace("-", "_")
+            col_name = f"{subplot_prefix}_{field_suffix}"
+            
+            k = 1
+            base_col_name = col_name
+            while col_name in df_dict:  # Handle potential column name collisions
+                col_name = f"{base_col_name}_{k}"
+                k += 1
+
+            signal_data = y_data[i][j]
+            if len(signal_data) != reference_length:
+                print(f"Warning: Data length mismatch for column '{col_name}'. "
+                      f"Expected {reference_length}, got {len(signal_data)}. Padding with NaNs.")
+                padded_signal = numpy.full(reference_length, numpy.nan)
+                min_len = min(len(signal_data), reference_length)
+                padded_signal[:min_len] = signal_data[:min_len]
+                df_dict[col_name] = padded_signal
+            else:
+                df_dict[col_name] = signal_data
+    return df_dict
+
+def save_as_pandas_dataframe(data_struct, x_data, y_data, filepath: str, file_format: str = 'parquet'):
+    df_dict = prepare_dataframe_dict(data_struct, x_data, y_data)
+    df = pd.DataFrame(df_dict)
+    if file_format == 'parquet':
+        try:
+            df.to_parquet(filepath, index=False, engine='pyarrow')
+        except ImportError:
+            print("Warning: pyarrow not installed. Trying with default engine for Parquet.")
+            df.to_parquet(filepath, index=False)
+    elif file_format == 'csv':
+        df.to_csv(filepath, index=False)
+    elif file_format == 'pickle':
+        df.to_pickle(filepath)
+    else:
+        raise ValueError(f"Unsupported file format: {file_format}. Supported formats are 'parquet', 'csv', and 'pickle'.")

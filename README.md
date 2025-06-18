@@ -20,6 +20,16 @@ To have a better insight of te project, you can head over to the more extensive
 If it is not found in the folder where the executable is run,
 it is created based on the [`templates/struct_cfg_template.yaml`](src/clab_datalogger_receiver/templates/struct_cfg_template.yaml).
 
+### Editing the Configuration
+
+You can edit the data structure configuration directly from the application UI:
+
+- Click the **"Edit Config"** button in the main window.
+- This opens a graphical editor for `struct_cfg.yaml`, where you can add, remove, or modify subplots and traces.
+- After saving your changes, the application will automatically reload the configuration and redraw the plots to reflect your updates.
+
+Alternatively, you can manually edit the `struct_cfg.yaml` file with a text editor.
+
 ## How-to
 
 This is a runnable package, meaning that it is possible to run

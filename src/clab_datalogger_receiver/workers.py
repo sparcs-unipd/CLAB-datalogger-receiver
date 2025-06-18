@@ -1,4 +1,4 @@
-from queue import Queue
+from queue import Empty, Queue
 from typing import Tuple
 
 from numpy import array as np_array
@@ -13,6 +13,8 @@ from .serial_communication.packets import TimedPacketBase
 from .simple_console_main_classes import (
     SubplotsReferences,
 )
+
+import time
 
 
 class DequeueWorker(QObject):
@@ -107,12 +109,25 @@ class DequeueAndPlotterWorker(QObject):
             new = False
             packages = []
 
-            while not self.rx_queue.empty():
-                packages.append(self.rx_queue.get(block=False))
+            try:
+                # Block for a short time to wait for new data
+                package = self.rx_queue.get(block=True, timeout=0.1)
+                packages.append(package)
                 new = True
 
+                # Drain the rest of the queue
+                while not self.rx_queue.empty():
+                    packages.append(self.rx_queue.get(block=False))
+            except Empty:
+                pass  # timeout occurred
+            except Exception:
+                pass  # some other exception
+
             QApplication.processEvents()
+
             if not new:
+                # Introduce a small sleep to avoid busy-waiting
+                time.sleep(0.01)
                 continue
 
             x_new, y_new = self.get_data_from_packages(packages)
@@ -150,3 +165,8 @@ class DequeueAndPlotterWorker(QObject):
                 y[y_i][y_ii] = np_array(yyy)  # type: ignore
 
         return x, y
+
+    def update_plot_structs(self, subplots_ref) -> None:
+        """Update the data structure with a new one."""
+        self.data_struct = subplots_ref.data_struct
+        self.subplots_ref = subplots_ref

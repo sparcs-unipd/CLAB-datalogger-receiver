@@ -1,6 +1,6 @@
 [project]
 name = "clab-datalogger-receiver"
-version = "0.3.0"
+version = "0.4.0"
 description = "A porting of another MATLAB implementation of the same data receiver and plotter."
 license = {file='LICENSE'}
 authors = [ 
@@ -12,9 +12,12 @@ dependencies = [
     'scipy>=1.10.1',
     'pyyaml>=6.0',
     'typing_extensions;python_version < "3.11"', # for typing.Self
-    'PySide6>=6.5.0',
+    'PySide6>=6.5.0,!=6.9.1',
     'pyqtgraph>=0.13.3',
-    'pyqtdarktheme>=2.1.0',
+    'pyqtdarktheme>=2.1.0;python_version <= "3.11"', 
+    # The non-fork version seems to not be updated anymore
+    'pyqtdarktheme-fork>=2.1.0;python_version > "3.11"', 
+    'pandas>=2.1.3',
 ]
 readme = "README.md"
 requires-python = ">=3.10"
@@ -42,7 +45,7 @@ extension-pkg-whitelist = "PySide6"
 # ignore = ['E203','W503']
 
 [tool.bumpver]
-current_version = "0.3.0"
+current_version = "0.4.0"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message  = "Bump version {old_version} -> {new_version}"
 commit          = true
