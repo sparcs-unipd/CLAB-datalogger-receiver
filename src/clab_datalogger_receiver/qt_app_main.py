@@ -312,7 +312,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.graph_widget)
         layout.addWidget(
             BoxButtonsWidget(
-                names=['Edit Config', 'Save', 'Exit'], fcns=[self.open_struct_editor, self.save, self.close]
+                names=['Edit Config', 'Save', 'Exit'],
+                fcns=[self.open_struct_editor, self.save, self.close]
             )
         )
 
@@ -410,99 +411,119 @@ class MainWindow(QMainWindow):
                 self.close(True)
 
     def save(self):
-        """Save all the captured data to a `.mat` file."""
+        """Save all the captured data to a file."""
         self.do_cache()
 
         if self.x_data_vectors.size == 0:
-            QMessageBox.information(self, "No Data", "There is no data to save.")
+            QMessageBox.information(
+                self, "No Data", "There is no data to save.")
             return
-        
+
         file_dialog = QFileDialog(self)
-        file_dialog.setAcceptMode(QFileDialog.AcceptSave)
+        file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
         file_dialog.setWindowTitle("Save Data")
-        
+
         # Suggest initial directory (User's Documents or Home folder)
         docs_dir = os.path.join(os.path.expanduser("~"), "Documents")
-        default_save_dir = docs_dir if os.path.isdir(docs_dir) else os.path.expanduser("~")
+        default_save_dir = docs_dir if os.path.isdir(
+            docs_dir) else os.path.expanduser("~")
         file_dialog.setDirectory(default_save_dir)
-        
+
         default_filename = f"sparcs_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        file_dialog.selectFile(default_filename) 
+        file_dialog.selectFile(default_filename)
 
         filters = [
-            "MAT files (*.mat)",
-            "CSV files (*.csv)",
-            "Pandas Parquet files (*.parquet)",
-            "Pandas Pickle files (*.pkl)",
+            # ( desc, extension, format)
+            ("MAT files", "mat", "mat"),
+            ("CSV files", "csv", "csv"),
+            ("Pandas Parquet files", "parquet", "parquet"),
+            ("Pandas Pickle files", "pkl", "pickle"),
         ]
-        file_dialog.setNameFilters(filters)
-        #file_dialog.setDefaultSuffix("mat") # Default for typing name without extension
+
+        file_dialog.setNameFilters(
+            [f'{f[0]} (*.{f[1]})' for f in filters]
+        )
+
+        # file_dialog.setDefaultSuffix("mat") # Default for typing name without extension
 
         if file_dialog.exec():
             selected_file_path = file_dialog.selectedFiles()[0]
             selected_filter = file_dialog.selectedNameFilter()
-            
+
             try:
-                print(f"Saving data to {selected_file_path} with filter {selected_filter}")
-                if "MAT files" in selected_filter:
-                    selected_file_path += ".mat" if not selected_file_path.endswith(".mat") else ""
-                    save_as_mat(
-                        self.data_struct,
-                        self.x_data_vectors,
-                        self.y_data_vectors,
-                        mat_filename=selected_file_path,
+                print(
+                    f"Saving data to {selected_file_path} with filter {selected_filter}")
+
+                extension = selected_file_path.split('.')[-1]
+                assert extension in [
+                    f[1] for f in filters], f"Extension not supported (.{extension})"
+
+                format_found = False
+                for filter_desc, filter_ext, filter_format in filters:
+                    if filter_desc in selected_filter:
+                        format_found = True
+                        # Add extension if not already present
+                        if not selected_file_path.endswith(filter_ext):
+                            selected_file_path += f'.{filter_ext}'
+
+                        if filter_ext == 'mat':
+                            save_as_mat(
+                                self.data_struct,
+                                self.x_data_vectors,
+                                self.y_data_vectors,
+                                mat_filename=selected_file_path,
+                            )
+                        else:
+                            save_as_pandas_dataframe(
+                                self.data_struct,
+                                self.x_data_vectors,
+                                self.y_data_vectors,
+                                filepath=selected_file_path,
+                                file_format=filter_format
+                            )
+
+                if not format_found:  # Should not happen with defined filters
+                    QMessageBox.warning(
+                        self,
+                        "Unknown Filter",
+                        "Selected file type filter is not recognized."
                     )
-                elif "CSV files" in selected_filter:
-                    selected_file_path += ".csv" if not selected_file_path.endswith(".csv") else ""
-                    save_as_pandas_dataframe(
-                        self.data_struct,
-                        self.x_data_vectors,
-                        self.y_data_vectors,
-                        filepath=selected_file_path,
-                        file_format='csv'
-                    )
-                elif "Pandas Parquet files" in selected_filter:
-                    selected_file_path += ".parquet" if not selected_file_path.endswith(".parquet") else ""
-                    save_as_pandas_dataframe(
-                        self.data_struct,
-                        self.x_data_vectors,
-                        self.y_data_vectors,
-                        filepath=selected_file_path,
-                        file_format='parquet'
-                    )
-                elif "Pandas Pickle files" in selected_filter:
-                    selected_file_path += ".pkl" if not selected_file_path.endswith(".pkl") else ""
-                    save_as_pandas_dataframe(
-                        self.data_struct,
-                        self.x_data_vectors,
-                        self.y_data_vectors,
-                        filepath=selected_file_path,
-                        file_format='pickle'
-                    )
-                else: # Should not happen with defined filters
-                    QMessageBox.warning(self, "Unknown Filter", "Selected file type filter is not recognized.")
-                    self.data_saved = False 
+                    self.data_saved = False
                     return
 
                 self.data_saved = True
-                QMessageBox.information(self, "Success", f"Data saved to {selected_file_path}")
-
+                QMessageBox.information(
+                    self, "Success", f"Data saved to {selected_file_path}")
+            except ImportError as e:
+                self.data_saved = False
+                QMessageBox.critical(
+                    self, "Error Saving File",
+                    f"Could not save file '{selected_file_path}':\n{type(e).__name__}: {e}"
+                )
             except Exception as e:
-                self.data_saved = False 
-                QMessageBox.critical(self, "Error Saving File", 
-                                     f"Could not save file '{selected_file_path}':\n{type(e).__name__}: {e}")
+                self.data_saved = False
+                message_text = (
+                    f"Could not save file '{selected_file_path}':<br><br>"
+                    + "<span style='color:orange; font-weight:bold;'>Please"
+                    + ' <a href="https://github.com/sparcs-unipd/CLAB-datalogger-receiver/issues/new/choose">file an issue</a>'
+                    + 'on github with this message!</span><br><br>'
+                    + f" {type(e).__name__}: {e}")
+
+                QMessageBox.critical(
+                    self,
+                    "Error Saving File with new exception",
+                    message_text
+                )
         else:
             # User cancelled the dialog
             print("Save operation cancelled by user.")
             # self.data_saved status remains unchanged from before save attempt
-
 
     def open_struct_editor(self):
         yaml_path = "struct_cfg.yaml"  # FIXME: Make this configurable or use a default path
         dlg = StructConfigEditor(yaml_path, self)
         dlg.yaml_saved.connect(self.on_struct_yaml_saved)  # Connect signal
         dlg.exec()
-
 
     def on_struct_yaml_saved(self):
         # Reload YAML and update UI
