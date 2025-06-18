@@ -4,7 +4,6 @@ Module that manages the main application window.
 from __future__ import annotations
 
 import os
-import sys
 
 from queue import Queue
 from typing import Callable, Type
@@ -14,12 +13,11 @@ import qdarktheme
 
 from pyqtgraph import (
     GraphicsLayoutWidget as pg_GraphicsLayoutWidget,
-    PlotDataItem,
+    PlotItem,
 )
 from numpy import array as np_array
 from numpy import concatenate as np_concatenate
 from numpy import ndarray as np_ndarray
-from numpy.typing import NDArray
 
 from PySide6.QtCore import QThread
 from PySide6.QtCore import Signal as pyqtSignal
@@ -330,7 +328,7 @@ class MainWindow(QMainWindow):
         datas = []
 
         for i, dat_format in enumerate(rx_data_format.subplots):
-            axis: PlotDataItem = self.graph_widget.addPlot(
+            axis: PlotItem = self.graph_widget.addPlot(
                 row=i,
                 col=0,
                 title=dat_format.name,
@@ -339,10 +337,12 @@ class MainWindow(QMainWindow):
 
             axis.showGrid(True)
             # axis.enableAutoRange(x=False, y=True)
-            axis.setMouseEnabled(x=False, y=False)
-            axis.enableAutoRange(x=False, y=True)
-            axis.setXRange(0, self.time_window)
-            axis.setDownsampling(True)
+            vb = axis.getViewBox()
+            assert isinstance(vb, ViewBox)
+            vb.setMouseEnabled(x=False, y=False)
+            vb.enableAutoRange(x=False, y=True)
+            vb.setXRange(0, self.time_window)
+            axis.setDownsampling(True, auto=True)
             axis.addLegend(
                 offset=(-10, 10),
                 brush=self.legend_background_brush,
@@ -385,30 +385,32 @@ class MainWindow(QMainWindow):
 
         self.connect(connection)
 
-    def close(self, force: bool = False):
+    def close(self, force: bool = False) -> bool:
         if self.data_saved or force:
-            super().close()
-        else:
-            close_btn = QMessageBox.StandardButton.No
-            cancel_btn = QMessageBox.StandardButton.Cancel
-            save_btn = QMessageBox.StandardButton.Yes
-            warning_text = (
-                "You are about to exit without saving all the data.\n"
-                "Do you want to save before closing?"
-            )
-            ret = QMessageBox.warning(
-                self,
-                "Attention, you could lose data",
-                warning_text,
-                save_btn | cancel_btn | close_btn,
-                save_btn,
-            )
+            return super().close()
 
-            if ret == save_btn:
-                self.save()
-                self.close(True)
-            elif ret == close_btn:
-                self.close(True)
+        close_btn = QMessageBox.StandardButton.No
+        save_btn = QMessageBox.StandardButton.Yes
+        cancel_btn = QMessageBox.StandardButton.Cancel
+        warning_text = (
+            "You are about to exit without saving all the data.\n"
+            "Do you want to save before closing?"
+        )
+        ret = QMessageBox.warning(
+            self,
+            "Attention, you could lose data",
+            warning_text,
+            save_btn | cancel_btn | close_btn,
+            save_btn,
+        )
+
+        if ret == save_btn:
+            self.save()
+            return self.close(True)
+        if ret == close_btn:
+            return self.close(True)
+
+        return False
 
     def save(self):
         """Save all the captured data to a file."""
