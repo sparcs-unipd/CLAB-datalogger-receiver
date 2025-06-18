@@ -109,8 +109,6 @@ def save_as_mat(
             raise RuntimeError('The saved file is corrupted')
         
 
-import numpy
-
 def prepare_dataframe_dict(data_struct, x_data, y_data) -> dict:
     df_dict = {'time': x_data}
     reference_length = len(x_data)

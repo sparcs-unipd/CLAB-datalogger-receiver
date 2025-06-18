@@ -1,4 +1,4 @@
-from queue import Queue
+from queue import Empty, Queue
 from typing import Tuple
 
 from numpy import array as np_array
@@ -118,8 +118,10 @@ class DequeueAndPlotterWorker(QObject):
                 # Drain the rest of the queue
                 while not self.rx_queue.empty():
                     packages.append(self.rx_queue.get(block=False))
+            except Empty:
+                pass  # timeout occurred
             except Exception:
-                pass  # Timeout occurred, no data available
+                pass  # some other exception
 
             QApplication.processEvents()
 
@@ -163,7 +165,6 @@ class DequeueAndPlotterWorker(QObject):
                 y[y_i][y_ii] = np_array(yyy)  # type: ignore
 
         return x, y
-    
 
     def update_plot_structs(self, subplots_ref) -> None:
         """Update the data structure with a new one."""
