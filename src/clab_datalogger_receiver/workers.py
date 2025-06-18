@@ -163,3 +163,9 @@ class DequeueAndPlotterWorker(QObject):
                 y[y_i][y_ii] = np_array(yyy)  # type: ignore
 
         return x, y
+    
+
+    def update_plot_structs(self, subplots_ref) -> None:
+        """Update the data structure with a new one."""
+        self.data_struct = subplots_ref.data_struct
+        self.subplots_ref = subplots_ref
