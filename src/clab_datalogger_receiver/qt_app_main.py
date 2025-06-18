@@ -14,6 +14,7 @@ import qdarktheme
 from pyqtgraph import (
     GraphicsLayoutWidget as pg_GraphicsLayoutWidget,
     PlotItem,
+    ViewBox,
 )
 from numpy import array as np_array
 from numpy import concatenate as np_concatenate
