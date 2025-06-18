@@ -7,7 +7,8 @@ Author:
 """
 
 import sys
-from scipy.io import savemat, loadmat
+# from scipy.io import savemat, loadmat
+from mat4py import savemat, loadmat
 import pandas as pd
 import numpy
 
@@ -56,7 +57,7 @@ def save_data_clab_datalogger(
             f.name for f in sp.fields
         ]
 
-    savemat(mat_filename, mdict=file_dict)
+    savemat(mat_filename, file_dict)
 
     print('Data saved.')
 
@@ -94,7 +95,7 @@ def save_as_mat(
         ]
     print('turtlebot_data:', file_dict['turtlebot_data'])
 
-    savemat(mat_filename, mdict=file_dict)
+    savemat(mat_filename, file_dict)
 
     print('Data saved.')
 
@@ -107,18 +108,20 @@ def save_as_mat(
             print('Data is ok')
         else:
             raise RuntimeError('The saved file is corrupted')
-        
+
 
 def prepare_dataframe_dict(data_struct, x_data, y_data) -> dict:
     df_dict = {'time': x_data}
     reference_length = len(x_data)
 
     for i, subplot_struct in enumerate(data_struct.subplots):
-        subplot_prefix = subplot_struct.name.replace(" ", "_").replace("-", "_")
+        subplot_prefix = subplot_struct.name.replace(
+            " ", "_").replace("-", "_")
         for j, field_struct in enumerate(subplot_struct.fields):
-            field_suffix = field_struct.name.replace(" ", "_").replace("-", "_")
+            field_suffix = field_struct.name.replace(
+                " ", "_").replace("-", "_")
             col_name = f"{subplot_prefix}_{field_suffix}"
-            
+
             k = 1
             base_col_name = col_name
             while col_name in df_dict:  # Handle potential column name collisions
@@ -137,6 +140,7 @@ def prepare_dataframe_dict(data_struct, x_data, y_data) -> dict:
                 df_dict[col_name] = signal_data
     return df_dict
 
+
 def save_as_pandas_dataframe(data_struct, x_data, y_data, filepath: str, file_format: str = 'parquet'):
     df_dict = prepare_dataframe_dict(data_struct, x_data, y_data)
     df = pd.DataFrame(df_dict)
@@ -144,11 +148,13 @@ def save_as_pandas_dataframe(data_struct, x_data, y_data, filepath: str, file_fo
         try:
             df.to_parquet(filepath, index=False, engine='pyarrow')
         except ImportError:
-            print("Warning: pyarrow not installed. Trying with default engine for Parquet.")
+            print(
+                "Warning: pyarrow not installed. Trying with default engine for Parquet.")
             df.to_parquet(filepath, index=False)
     elif file_format == 'csv':
         df.to_csv(filepath, index=False)
     elif file_format == 'pickle':
         df.to_pickle(filepath)
     else:
-        raise ValueError(f"Unsupported file format: {file_format}. Supported formats are 'parquet', 'csv', and 'pickle'.")
+        raise ValueError(
+            f"Unsupported file format: {file_format}. Supported formats are 'parquet', 'csv', and 'pickle'.")

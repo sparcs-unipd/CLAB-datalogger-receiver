@@ -9,7 +9,8 @@ authors = [
 dependencies = [
     'cobs>=1.2.0',
     'pyserial>=3.5',
-    'scipy>=1.10.1',
+    # 'scipy>=1.10.1',
+    'mat4py>=0.6.0',                             # savemat, loadmat
     'pyyaml>=6.0',
     'typing_extensions;python_version < "3.11"', # for typing.Self
     'PySide6>=6.5.0,!=6.9.1',
